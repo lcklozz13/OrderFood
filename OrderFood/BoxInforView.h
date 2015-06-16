@@ -26,6 +26,7 @@ typedef void(^OpenRoomAction)(BoxInforView *);
 @property (nonatomic, assign) BOOL                  isMember;//是否会员
 @property (nonatomic, assign) int                   stat;//开房状态
 @property (nonatomic, strong) NSString              *usedTime;//使用时间
+@property (nonatomic, strong) NSString              *leaveTime;//剩余时间
 
 @property (nonatomic, copy) OrderFoodAction         didOrderFoodAction;
 @property (nonatomic, copy) ChangeRoomAction        didChangeRoomAction;

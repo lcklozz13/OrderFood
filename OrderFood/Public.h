@@ -25,6 +25,7 @@
 @property (nonatomic, retain) NSMutableDictionary *bookHistoryDictionary;//订餐记录
 @property (nonatomic, unsafe_unretained) dispatch_queue_t getImageQueue;//获得图片的线程队列
 @property (nonatomic, unsafe_unretained) dispatch_queue_t getCategoryQueue;//获得类别的线程队列
+@property (nonatomic, retain) NSMutableDictionary *roomIDAndBookID;//房间号与订餐
 
 + (Public *)getInstance;//返回实例
 + (void)freeInstance;//释放实例

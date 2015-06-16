@@ -28,6 +28,7 @@
 @synthesize time;
 @synthesize roomCategory;
 @synthesize usedTime;
+@synthesize leaveTime;
 
 @synthesize didOrderFoodAction, didChangeRoomAction, didOpenRoomAction;
 
@@ -40,16 +41,16 @@
     self.category = nil;
     
     [titleLab removeFromSuperview];
-//    [titleLab release],
+    //    [titleLab release],
     titleLab = nil;
     [subTitleLab removeFromSuperview];
-//    [subTitleLab release],
+    //    [subTitleLab release],
     subTitleLab = nil;
     [memberLab removeFromSuperview];
-//    [memberLab release],
+    //    [memberLab release],
     memberLab = nil;
     [timeLab removeFromSuperview];
-//    [timeLab release],
+    //    [timeLab release],
     timeLab = nil;
     
     self.bgImageView = nil;
@@ -57,7 +58,7 @@
     self.didChangeRoomAction = nil;
     self.didOpenRoomAction = nil;
     
-//    [super dealloc];
+    //    [super dealloc];
 }
 
 - (id)initWithBoxCellInfor:(NSMutableArray *)cellInfor frame:(CGRect)frame
@@ -119,12 +120,12 @@
 {
     if (code)
     {
-//        [code release],
+        //        [code release],
         code = nil;
     }
     
     code = /*[*/code1 /*retain]*/;
-        
+    
     if ([code isEqualToString:@"U"])//U使用
     {
         stat = 1;
@@ -164,7 +165,7 @@
     {
         case 1:
         {
-//            [subTitleLab setText:@"使用中"];
+            //            [subTitleLab setText:@"使用中"];
             UIImage *image = [UIImage imageNamed:@"b_using.png"];
             [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
         }
@@ -172,7 +173,7 @@
             
         case 2:
         {
-//            [subTitleLab setText:@"已预定"];
+            //            [subTitleLab setText:@"已预定"];
             UIImage *image = [UIImage imageNamed:@"b_order.png"];
             [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
         }
@@ -180,7 +181,7 @@
             
         case 3:
         {
-//            [subTitleLab setText:@"空闲"];
+            //            [subTitleLab setText:@"空闲"];
             UIImage *image = [UIImage imageNamed:@"b_free.png"];
             [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
         }
@@ -188,7 +189,7 @@
             
         case 4:
         {
-//            [subTitleLab setText:@"维修中"];
+            //            [subTitleLab setText:@"维修中"];
             UIImage *image = [UIImage imageNamed:@"b_fix.png"];
             [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
         }
@@ -196,7 +197,7 @@
             
         case 5:
         {
-//            [subTitleLab setText:@"试机中"];
+            //            [subTitleLab setText:@"试机中"];
             UIImage *image = [UIImage imageNamed:@"b_test.png"];
             [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
             [bgImageView setImage:[UIImage imageNamed:@"b_test.png"]];
@@ -231,14 +232,14 @@
 {
     if (curCellInfor)
     {
-//        [curCellInfor release],
+        //        [curCellInfor release],
         curCellInfor = nil;
     }
     
     curCellInfor = /*[*/curCellInfor1/* retain]*/;
     self.code = @"U";
     
-    if ([curCellInfor count] == 9)
+    if ([curCellInfor count] == 10)
     {
         self.title = [curCellInfor objectAtIndex:3];
         [titleLab setText:title];
@@ -249,8 +250,9 @@
         self.time = [curCellInfor objectAtIndex:6];
         self.roomCategory = [curCellInfor objectAtIndex:7];
         self.usedTime = [curCellInfor1 objectAtIndex:8];
+        self.leaveTime = [curCellInfor1 objectAtIndex:9];
     }
-    else if ([curCellInfor count] == 8)
+    else if ([curCellInfor count] == 9)
     {
         self.title = [curCellInfor objectAtIndex:2];
         [titleLab setText:title];
@@ -261,10 +263,11 @@
         self.time = [curCellInfor objectAtIndex:5];
         self.roomCategory = [curCellInfor objectAtIndex:6];
         self.usedTime = [curCellInfor1 objectAtIndex:7];
+        self.leaveTime = [curCellInfor1 objectAtIndex:8];
     }
     
     [subTitleLab setText:roomCategory];
-//    [timeLab setText:time];
+    //    [timeLab setText:time];
     //MARK:显示已使用的时间,fix(7.包厢状态不显示包厢时间，这样时间快到的包厢续点餐时候会来不及做，显示时间就可以提醒客人先续房费，然后点餐).
     [timeLab setText:usedTime];
     
@@ -288,27 +291,27 @@
 }
 
 /*
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
-- (void)drawRect:(CGRect)rect
-{
-    // Drawing code
-}
-
-
-- (BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
-{
-    return YES;
-}
-
-- (void)endTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
-{
-    
-}
-
-- (void)cancelTrackingWithEvent:(UIEvent *)event
-{
-    
-}
+ // Only override drawRect: if you perform custom drawing.
+ // An empty implementation adversely affects performance during animation.
+ - (void)drawRect:(CGRect)rect
+ {
+ // Drawing code
+ }
+ 
+ 
+ - (BOOL)beginTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
+ {
+ return YES;
+ }
+ 
+ - (void)endTrackingWithTouch:(UITouch *)touch withEvent:(UIEvent *)event
+ {
+ 
+ }
+ 
+ - (void)cancelTrackingWithEvent:(UIEvent *)event
+ {
+ 
+ }
  */
 @end

@@ -126,7 +126,7 @@ typedef NS_ENUM(int, RoomCategory) {
     btnL.frame = r;
     UIBarButtonItem *item = [[UIBarButtonItem alloc] initWithCustomView:btnL];
     self.navigationItem.leftBarButtonItem = item;
-//    [item release];
+    //    [item release];
     //刷新按钮
     btnL = [UIButton buttonWithType:UIButtonTypeCustom];
     [btnL setImage:[UIImage imageNamed:@"icon_refresh.png"] forState:UIControlStateNormal];
@@ -138,7 +138,7 @@ typedef NS_ENUM(int, RoomCategory) {
     
     item = [[UIBarButtonItem alloc] initWithCustomView:btnL];
     self.navigationItem.rightBarButtonItem = item;
-//    [item release];
+    //    [item release];
     //搜索栏
     for (UIView *view in [searchbar subviews])
     {
@@ -170,7 +170,7 @@ typedef NS_ENUM(int, RoomCategory) {
     //点击操作
     UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tap)];
     [self.view addGestureRecognizer:tap];
-//    [tap release];
+    //    [tap release];
     isEdit = YES;
     needRefresh = YES;
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -306,7 +306,7 @@ typedef NS_ENUM(int, RoomCategory) {
 //改变当前模式
 - (IBAction)valueChange:(id)sender
 {
-//    [searchbar setText:@""];
+    //    [searchbar setText:@""];
     [searchbar resignFirstResponder];
     [searchbar setShowsCancelButton:NO animated:NO];
     
@@ -326,21 +326,19 @@ typedef NS_ENUM(int, RoomCategory) {
     
     [tableView reloadData];
 }
-//点击包厢视图回调函数
-- (void)clickCellRoom:(BoxInforView *)view
+
+- (void)showPopView:(BoxInforView *)view
 {
     //弹出包厢操作界面
     popview = [[ShowActionViewController alloc] initWithBoxInforView:view];
     
     CGRect r = [UIScreen mainScreen].bounds;
-//    popview.view.frame = r;
     popview.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
     popview.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
     __block typeof(self) obj = self;
     popview.backAction = ^(ShowActionViewController *controller)//返回操作
     {
         [controller.view removeFromSuperview];
-//        [controller release];
     };
     
     popview.bookRoom = ^(ShowActionViewController *controller)//开房操作
@@ -363,13 +361,48 @@ typedef NS_ENUM(int, RoomCategory) {
     self.curRoomId = view;
 }
 
+//点击包厢视图回调函数
+- (void)clickCellRoom:(BoxInforView *)view
+{
+    if ([view.leaveTime intValue] < 30*60)
+    {
+        self.curRoomId = view;
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"提示" message:@"当前包厢使用时间快要结束，是否继续点餐" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+        alert.tag = 10010;
+        [alert show];
+        
+        
+        return;
+    }
+    else
+    {
+        [self showPopView:view];
+    }
+}
+
 #pragma mark UIAlertViewDelegate
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
+    if (alertView.tag == 10010)
+    {
+        return;
+    }
+    
     if (buttonIndex == 1)
     {
         //开房
         [self bookAndFoodAction];
+    }
+}
+
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+    if (alertView.tag == 10010 && buttonIndex == 1)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            [self performSelectorOnMainThread:@selector(showPopView:) withObject:curRoomId waitUntilDone:NO];
+        });
     }
 }
 
@@ -415,7 +448,7 @@ typedef NS_ENUM(int, RoomCategory) {
     [[Public getInstance].juhua hide:YES];
     UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"链接超时" message:@"链接超时，请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
     [view show];
-//    [view release];
+    //    [view release];
 }
 
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
@@ -429,7 +462,7 @@ typedef NS_ENUM(int, RoomCategory) {
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"获取包厢列表失败" message:@"获取包厢列表失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
+            //            [view release];
         }
         else
         {
@@ -437,9 +470,9 @@ typedef NS_ENUM(int, RoomCategory) {
             NSLog(@"%@", parse.instruction);
             NSLog(@"%@", parse.contents);
             self.curParse = parse;
-//            [parse release];
+            //            [parse release];
             int index = 0;
-//            __block typeof(self) ob = self;
+            //            __block typeof(self) ob = self;
             kongxianCount = 0;
             shiyongCount = 0;
             yudingCount = 0;
@@ -517,7 +550,7 @@ typedef NS_ENUM(int, RoomCategory) {
                 }
                 
                 [view addTarget:self action:@selector(clickCellRoom:) forControlEvents:UIControlEventTouchDown];
-//                [view release];
+                //                [view release];
             }
             
             [roomCategory removeAllSegments];
@@ -549,7 +582,7 @@ typedef NS_ENUM(int, RoomCategory) {
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"开房定食失败" message:@"开房定食操作失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
+            //            [view release];
         }
         else
         {
@@ -564,9 +597,9 @@ typedef NS_ENUM(int, RoomCategory) {
                 
                 RoomManagerViewController *view = [[RoomManagerViewController alloc] initBookedFood:parse roomid:curRoomId.roomId roomName:curRoomId.title];
                 [self.navigationController pushViewController:view animated:NO];
-//                [view release];
+                //                [view release];
             }
-//            [parse release];
+            //            [parse release];
         }
     }
     else if (tag == [INS_CHANGE_ROOM intValue])
@@ -579,18 +612,18 @@ typedef NS_ENUM(int, RoomCategory) {
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"查单失败" message:@"查单失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
+            //            [view release];
         }
         else
         {
             InstructionParse *parse = [[InstructionParse alloc] initWithInstructionString:[[Public getComponentsSeparated:str] objectAtIndex:1]];
             NSLog(@"%@", parse.instruction);
             NSLog(@"%@", parse.contents);
-//            [parse release];
+            //            [parse release];
         }
     }
     
-//    [str release];
+    //    [str release];
     
     return YES;
 }
@@ -731,28 +764,28 @@ typedef NS_ENUM(int, RoomCategory) {
 - (void)dealloc
 {
     [searchArray removeAllObjects];
-//    [searchArray release],
+    //    [searchArray release],
     searchArray = nil;
     [dic removeAllObjects];
-//    [dic release],
+    //    [dic release],
     dic = nil;
     [boxViewArray removeAllObjects];
-//    [boxViewArray release],
+    //    [boxViewArray release],
     boxViewArray = nil;
     getRoomsSocket.delegate = nil;
-//    [getRoomsSocket release];
+    //    [getRoomsSocket release];
     getRoomsSocket = nil;
     changeRoomsSocket.delegate = nil;
-//    [changeRoomsSocket release],
+    //    [changeRoomsSocket release],
     changeRoomsSocket = nil;
     bookAndFoodSocket.delegate = nil;
-//    [bookAndFoodSocket release],
+    //    [bookAndFoodSocket release],
     bookAndFoodSocket = nil;
     checkBooksSocket.delegate = nil;
-//    [checkBooksSocket release],
+    //    [checkBooksSocket release],
     checkBooksSocket = nil;
     [freeRoomList removeAllObjects];
-//    [freeRoomList release],
+    //    [freeRoomList release],
     freeRoomList = nil;
     
     if ([refreshTimer isValid])
@@ -769,7 +802,7 @@ typedef NS_ENUM(int, RoomCategory) {
     self.roomCategory = nil;
     [[NSNotificationCenter defaultCenter] removeObserver:self];
     
-//    [super dealloc];
+    //    [super dealloc];
 }
 
 #pragma mark - keyboard Notifications callback
@@ -858,7 +891,7 @@ typedef NS_ENUM(int, RoomCategory) {
 
 - (void)searchBarCancelButtonClicked:(UISearchBar *) searchBar
 {
-//    [searchbar setText:@""];
+    //    [searchbar setText:@""];
     [searchbar resignFirstResponder];
 }
 

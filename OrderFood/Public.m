@@ -18,6 +18,7 @@
 @synthesize getImageQueue;
 @synthesize getCategoryQueue;
 @synthesize bookHistoryDictionary;
+@synthesize roomIDAndBookID;
 
 static Public *_Public = nil;
 
@@ -64,6 +65,7 @@ static Public *_Public = nil;
          3.当房间状态为以结的时候清空房间对应的array里面的值
          */
         bookHistoryDictionary = [[NSMutableDictionary alloc] init];
+        roomIDAndBookID = [[NSMutableDictionary alloc] init];
     }
     
     return self;
@@ -220,6 +222,8 @@ static Public *_Public = nil;
     self.getImageQueue = nil;
     dispatch_release(getCategoryQueue);
     self.getCategoryQueue = nil;
+    [roomIDAndBookID removeAllObjects];
+    self.roomIDAndBookID = nil;
     
 //    [super dealloc];
 }

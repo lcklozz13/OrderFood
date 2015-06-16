@@ -28,6 +28,7 @@
     AsyncUdpSocket  *getFoodList;//获取食物列表
     AsyncUdpSocket  *bookRequest;//下单操作
     AsyncUdpSocket  *bookAndFoodSocket;//查询已点清单
+    AsyncUdpSocket  *checkRoomIDSocket;//查询已点清单
     NSMutableArray  *foodCategoryArray;//存放类别数据源
     NSMutableArray  *bookedArray;//存放已选列表
     NSMutableArray  *foodPictureViewArray;//存放食物view
@@ -231,6 +232,18 @@
     return self;
 }
 
+- (void)checkRoomID
+{
+    NSString *str = [InstructionCreate getInStruction:INS_BX_ZT withContents:[NSMutableArray arrayWithObject:[NSMutableArray arrayWithObjects:roomId, nil]]];
+    
+    NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
+    [Public getInstance].juhua.labelText = @"查询房间状态。。。";
+    [[Public getInstance].juhua show:YES];
+    [checkRoomIDSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_BX_ZT intValue]];
+    [checkRoomIDSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_BX_ZT intValue]];
+
+}
+
 - (void)viewDidLoad
 {
     //初始化界面
@@ -386,7 +399,9 @@
     getFoodList = [[AsyncUdpSocket alloc] initWithDelegate:self];
     bookRequest = [[AsyncUdpSocket alloc] initWithDelegate:self];
     bookAndFoodSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
-    [self getGoodCategorySocketAction];//获得食物类别
+    checkRoomIDSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    [self checkRoomID];
+//    [self getGoodCategorySocketAction];//获得食物类别
     isListStyple = YES;
     [myToobar setBackgroundImage:[UIImage imageNamed:@"b_footer.png"] forToolbarPosition:UIToolbarPositionAny barMetrics:UIBarMetricsDefault];
     [[NSNotificationCenter defaultCenter] addObserver:self
@@ -444,42 +459,47 @@
             [hud hide:NO afterDelay:2];
             return;
         }
-        __block typeof(obj) ob1 = obj;
-        //显示校验界面
-        obj->checkview = [[CheckUserViewController alloc] init];
-        [obj->checkview.view setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5f]];
-        CGRect r = [UIScreen mainScreen].bounds;
-        obj->checkview.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
-        obj->checkview.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
         
-        [[[UIApplication sharedApplication] keyWindow] addSubview:obj->checkview.view];
-        
-        obj->checkview.cancelCheck = ^(CheckUserViewController *viewController)//取消校验
-        {
-            [viewController.view removeFromSuperview];
-//            [viewController release];
-        };
-        
-        obj->checkview.checkSuccessfully = ^(CheckUserViewController *viewController)//确定校验
-        {
-            [viewController.view removeFromSuperview];
-//            [viewController release];
-            
-            [controller.view removeFromSuperview];
-            [ob1 orderAction];
-            ob1.curSelectView = nil;
-            float total = 0.0f;
-            
-            for (FoodObject *food in ob1.bookedArray)
-            {
-                total += [food.price floatValue] * food.bookCount;
-            }
-            
-            [ob1.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
-            CGRect r = ob1.showTotalLab.frame;
-            r.size.width = (30 + [ob1.showTotalLab.text sizeWithFont:ob1.showTotalLab.font].width);
-            ob1.showTotalLab.frame = r;
-        };
+        /****************************/
+        UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"提示" message:@"是否提交点餐" delegate:obj cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+        alert.tag = 10010;
+        [alert show];
+        return;
+        /****************************/
+//        __block typeof(obj) ob1 = obj;
+//        //显示校验界面
+//        obj->checkview = [[CheckUserViewController alloc] init];
+//        [obj->checkview.view setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5f]];
+//        CGRect r = [UIScreen mainScreen].bounds;
+//        obj->checkview.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
+//        obj->checkview.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
+//        
+//        [[[UIApplication sharedApplication] keyWindow] addSubview:obj->checkview.view];
+//        
+//        obj->checkview.cancelCheck = ^(CheckUserViewController *viewController)//取消校验
+//        {
+//            [viewController.view removeFromSuperview];
+//        };
+//        
+//        obj->checkview.checkSuccessfully = ^(CheckUserViewController *viewController)//确定校验
+//        {
+//            [viewController.view removeFromSuperview];
+//            
+//            [controller.view removeFromSuperview];
+//            [ob1 orderAction];
+//            ob1.curSelectView = nil;
+//            float total = 0.0f;
+//            
+//            for (FoodObject *food in ob1.bookedArray)
+//            {
+//                total += [food.price floatValue] * food.bookCount;
+//            }
+//            
+//            [ob1.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+//            CGRect r = ob1.showTotalLab.frame;
+//            r.size.width = (30 + [ob1.showTotalLab.text sizeWithFont:ob1.showTotalLab.font].width);
+//            ob1.showTotalLab.frame = r;
+//        };
     };
     //返回回调块
     selectedview.didBack = ^(SelectedListViewController *controller)
@@ -561,28 +581,32 @@
         
         return;
     }
-    //显示校验界面
-    checkview = [[CheckUserViewController alloc] init];
-    [checkview.view setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5f]];
-    CGRect r = [UIScreen mainScreen].bounds;
-//    view.view.frame = r;
-    checkview.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
-    checkview.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
     
-    [[[UIApplication sharedApplication] keyWindow] addSubview:checkview.view];
-    __block typeof(self) obj = self;
-    checkview.cancelCheck = ^(CheckUserViewController *viewController)//取消校验
-    {
-        [viewController.view removeFromSuperview];
-//        [viewController release];
-    };
-    
-    checkview.checkSuccessfully = ^(CheckUserViewController *viewController)//确定校验
-    {
-        [viewController.view removeFromSuperview];
-//        [viewController release];
-        [obj orderAction];
-    };
+    /****************************/
+    UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"提示" message:@"是否提交点餐" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+    alert.tag = 10010;
+    [alert show];
+    return;
+    /****************************/
+//    //显示校验界面
+//    checkview = [[CheckUserViewController alloc] init];
+//    [checkview.view setBackgroundColor:[UIColor colorWithRed:0 green:0 blue:0 alpha:0.5f]];
+//    CGRect r = [UIScreen mainScreen].bounds;
+//    checkview.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
+//    checkview.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
+//    
+//    [[[UIApplication sharedApplication] keyWindow] addSubview:checkview.view];
+//    __block typeof(self) obj = self;
+//    checkview.cancelCheck = ^(CheckUserViewController *viewController)//取消校验
+//    {
+//        [viewController.view removeFromSuperview];
+//    };
+//    
+//    checkview.checkSuccessfully = ^(CheckUserViewController *viewController)//确定校验
+//    {
+//        [viewController.view removeFromSuperview];
+//        [obj orderAction];
+//    };
 }
 
 //下单操作
@@ -771,6 +795,17 @@
     }
     
     [detailListView reloadData];
+}
+
+#pragma mark UIAlertViewDelegate
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+    if (alertView.tag == 10010 && buttonIndex == 1)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self orderAction];
+        });
+    }
 }
 
 #pragma mark AsyncUdpSocketDelegate
@@ -967,6 +1002,27 @@
                 [[[UIApplication sharedApplication] keyWindow] addSubview:showBookListView.view];
             }
 //            [parse release];
+        }
+    }
+    else if (tag == [INS_BX_ZT intValue])
+    {
+        if ([str length] == 0)//查询失败
+        {
+            return NO;
+        }
+        else
+        {
+            NSString *curRoomID = [[Public getInstance].roomIDAndBookID objectForKey:roomId];
+            
+            if (![curRoomID isEqualToString:str])
+            {
+                [[Public getInstance].roomIDAndBookID setValue:str forKey:roomId];
+                //清空缓存
+                [bookedArray removeAllObjects];
+            }
+            
+            [self getGoodCategorySocketAction];//获得食物类别
+            
         }
     }
     
