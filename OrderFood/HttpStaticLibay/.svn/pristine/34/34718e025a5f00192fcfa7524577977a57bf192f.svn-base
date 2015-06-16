@@ -1,0 +1,7 @@
+//
+// Prefix header for all source files of the 'HttpStaticLibay' target in the 'HttpStaticLibay' project
+//
+
+#ifdef __OBJC__
+    #import <Foundation/Foundation.h>
+#endif

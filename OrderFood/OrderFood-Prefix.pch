@@ -11,4 +11,9 @@
 #ifdef __OBJC__
     #import <UIKit/UIKit.h>
     #import <Foundation/Foundation.h>
+    #import "Configure.h"
+    #import "Public.h"
+    #import "InstructionCreate.h"
+    #import "InstructionParse.h"
+    #import "AsyUdpSocket/AsyncUdpSocket.h"
 #endif
