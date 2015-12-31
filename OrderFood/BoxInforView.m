@@ -133,18 +133,19 @@
     else if ([code isEqualToString:@"D"])//Z整理20140823，服务端改D为预定
     {
         //MARK:整理包厢清空之前的订餐缓存数据
-        NSMutableArray *bookedArray = [[Public getInstance].bookHistoryDictionary objectForKey:roomId];
-        if (bookedArray)
-        {
-            [bookedArray removeAllObjects];
-        }
+//        NSMutableArray *bookedArray = [[Public getInstance].bookHistoryDictionary objectForKey:roomId];
+//        if (bookedArray)
+//        {
+//            [bookedArray removeAllObjects];
+//        }
         stat = 2;
     }
     else if ([code isEqualToString:@"K"])//K空闲
     {
         stat = 3;
         NSMutableArray *bookedList = [[Public getInstance].bookHistoryDictionary objectForKey:roomId];
-        if ([bookedList count] > 0) {
+        if ([bookedList count] > 0)
+        {
             [bookedList removeAllObjects];
         }
     }
@@ -160,10 +161,20 @@
     {
         stat = 6;
     }
+    else if ([code isEqualToString:@"E"])//E整理
+    {
+        stat = 7;
+        NSMutableArray *bookedList = [[Public getInstance].bookHistoryDictionary objectForKey:roomId];
+        if ([bookedList count] > 0)
+        {
+            [bookedList removeAllObjects];
+        }
+    }
     
     switch (stat)
     {
         case 1:
+            
         {
             //            [subTitleLab setText:@"使用中"];
             UIImage *image = [UIImage imageNamed:@"b_using.png"];
@@ -212,6 +223,13 @@
         }
             break;
             
+        case 7:
+        {
+            UIImage *image = [UIImage imageNamed:@"b_cleanup.png"];
+            [bgImageView setImage:[image stretchableImageWithLeftCapWidth:image.size.width/2.0f topCapHeight:image.size.height/2.0f]];
+            [bgImageView setImage:[UIImage imageNamed:@"b_cleanup.png"]];
+        }
+            
         default:
             break;
     }
@@ -232,7 +250,6 @@
 {
     if (curCellInfor)
     {
-        //        [curCellInfor release],
         curCellInfor = nil;
     }
     

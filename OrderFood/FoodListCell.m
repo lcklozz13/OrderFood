@@ -25,6 +25,7 @@
 @property (nonatomic, strong) UIImageView     *bottonSepView;
 @property (nonatomic, strong) UILabel         *danwei1;
 @property (nonatomic, strong) UILabel         *danwei2;
+@property (nonatomic, strong) UITapGestureRecognizer *tap;
 @end
 
 @implementation FoodListCell
@@ -41,6 +42,7 @@
 @synthesize selectImageBg;
 @synthesize touchShowAddtion;
 @synthesize selectedAddtion;
+@synthesize tap;
 
 - (void)dealloc
 {
@@ -61,6 +63,7 @@
     self.showPrice = nil;
     self.bottonSepView = nil;
     self.selectedAddtion = nil;
+    self.tap = nil;
     
 //    [super dealloc];
 }
@@ -85,7 +88,11 @@
 - (id)initWithStyle:(UITableViewCellStyle)style reuseIdentifier:(NSString *)reuseIdentifier
 {
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
-    if (self) {
+    
+    if (self)
+    {
+        tap =[[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapCellAction)];
+        [self addGestureRecognizer:tap];
         touchShowAddtion = NO;
         // Initialization code 102,94,90
         selectImageBg = [[UIImageView alloc] initWithFrame:self.bounds];//背景
@@ -230,10 +237,10 @@
     }
     
     [self.textLabel setText:food.foodName];
-    [showPrice setText:[NSString stringWithFormat:@"￥%@", food.price]];
-    [danwei1 setText:[NSString stringWithFormat:@"  /%@", food.danwei]];
+    [showPrice setText:[[NSString alloc] initWithFormat:@"￥%@", food.price]];
+    [danwei1 setText:[[NSString alloc] initWithFormat:@"  /%@", food.danwei]];
     [danwei2 setText:food.danwei];
-    showCount.text = [NSString stringWithFormat:@"%d", food.bookCount];
+    showCount.text = [[NSString alloc] initWithFormat:@"%d", food.bookCount];
     
     if (food)
     {
@@ -250,7 +257,7 @@
         UILabel *left = (UILabel *)(showCount.leftView);
         UILabel *right = (UILabel *)(showCount.rightView);
         
-        [showCount setText:[NSString stringWithFormat:@"%d", food.bookCount]];
+        [showCount setText:[[NSString alloc] initWithFormat:@"%d", food.bookCount]];
         CGRect r = showCount.frame;
         
         r.size = [showCount.text sizeWithFont:showCount.font];
@@ -265,8 +272,55 @@
         });
     }
 }
+
 //删除操作
 - (void)deleteAction
+{
+    if ([[food.isTaocan lowercaseString] isEqualToString:@"false"])
+    {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"您当前选择的是可选套餐,请注意修改明细" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+        alertView.tag = 10010;
+        [alertView show];
+    }
+    else
+    {
+        [self Decrease];
+    }
+}
+//添加操作
+- (void)addAction
+{
+    if ([[food.isTaocan lowercaseString] isEqualToString:@"false"])
+    {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"您当前选择的是可选套餐,请注意修改明细" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+        alertView.tag = 10086;
+        [alertView show];
+    }
+    else
+    {
+        [self Increase];
+    }
+}
+
+- (void)Increase
+{
+    food.bookCount = food.bookCount + 1;
+    
+    if (food.bookCount == 1)
+    {
+        if (didAddtion)
+        {
+            didAddtion(food);
+        }
+    }
+    
+    if (refreshBlock)
+    {
+        refreshBlock();
+    }
+}
+
+- (void)Decrease
 {
     if (food.bookCount > 0)
     {
@@ -296,24 +350,7 @@
         refreshBlock();
     }
 }
-//添加操作
-- (void)addAction
-{
-    food.bookCount = food.bookCount + 1;
-    
-    if (food.bookCount == 1)
-    {
-        if (didAddtion)
-        {
-            didAddtion(food);
-        }
-    }
-    
-    if (refreshBlock)
-    {
-        refreshBlock();
-    }
-}
+
 //界面排布
 - (void)layoutSubviews
 {
@@ -396,12 +433,37 @@
 {
     if (!touchShowAddtion)
     {
-        NSString *ret = [[food.taocanDict allKeys] objectAtIndex:section];
-        if ([ret isEqualToString:@"guding"]) {
+        NSArray *cate = [[food.taocanDict allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            
+            NSString *ob1 = (NSString *)obj1;
+            NSString *ob2 = (NSString *)obj2;
+            
+            if ([ob1 isEqualToString:ob2])
+            {
+                return NSOrderedSame;
+            }
+            else if ([ob1 isEqualToString:@"guding"])
+            {
+                return NSOrderedAscending;
+            }
+            else if ([ob2 isEqualToString:@"guding"])
+            {
+                return NSOrderedDescending;
+            }
+            else
+            {
+                return [[ob1 lowercaseString] compare:[ob2 lowercaseString]];
+            }
+        }];
+        
+        NSString *ret = [cate objectAtIndex:section];
+        if ([ret isEqualToString:@"guding"])
+        {
             ret = @"固定选项";
         }
-        else {
-            ret = [NSString stringWithFormat:@"%@   可任选%d个", ret, [[food.taocanCountDict objectForKey:ret] intValue]];
+        else
+        {
+            ret = [[NSString alloc] initWithFormat:@"%@   可任选%d X %d个", ret, [[food.taocanCountDict objectForKey:ret] intValue], food.bookCount];
         }
         
         return ret;
@@ -415,7 +477,30 @@
     if (!touchShowAddtion)
     {
         //return food.foodlist;
-        return [food.taocanDict objectForKey:[[food.taocanDict allKeys] objectAtIndex:section]];
+        NSArray *cate = [[food.taocanDict allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+            
+            NSString *ob1 = (NSString *)obj1;
+            NSString *ob2 = (NSString *)obj2;
+            
+            if ([ob1 isEqualToString:ob2])
+            {
+                return NSOrderedSame;
+            }
+            else if ([ob1 isEqualToString:@"guding"])
+            {
+                return NSOrderedAscending;
+            }
+            else if ([ob2 isEqualToString:@"guding"])
+            {
+                return NSOrderedDescending;
+            }
+            else
+            {
+                return [[ob1 lowercaseString] compare:[ob2 lowercaseString]];
+            }
+        }];
+        
+        return [food.taocanDict objectForKey:[cate objectAtIndex:section]];
     }
     
     return nil;
@@ -429,7 +514,7 @@
         NSArray *array = [food.taocanDict allKeys];
         NSString *key = [array objectAtIndex:section];
         NSNumber *num = [food.taocanCountDict objectForKey:key];
-        return [num intValue];
+        return [num intValue] * food.bookCount;
     }
     
     return 0;
@@ -466,10 +551,113 @@
     [[PopTableAlertView getInstance] show];
 }
 
+- (void)showFoodList
+{
+    if ([food.foodlist count] == 0)
+    {
+        [Public getInstance].juhua.labelText = @"正在查询套餐明细";
+        [[Public getInstance].juhua show:YES];
+        [food getMingXi];
+        __block typeof(self) obj = self;
+        food.didFinishQuery = ^(NSMutableArray *ret) {
+            
+            [[Public getInstance].juhua show:NO];
+            
+            if ([ret count] == 0)
+            {
+                obj->food.bookCount = 0;
+                if (obj->refreshBlock)
+                {
+                    obj->refreshBlock();
+                }
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    
+                    //提示:查询套餐明细失败
+                    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
+                    
+                    hud.mode = MBProgressHUDModeText;
+                    hud.labelText = @"查询套餐明细失败，请重试。";
+                    hud.margin = 10.f;
+                    hud.removeFromSuperViewOnHide = YES;
+                    
+                    [hud hide:NO afterDelay:2];
+                    
+                });
+                return;
+            }
+            else
+            {
+                [PopTableAlertView getInstance].delegate = obj;
+                [PopTableAlertView getInstance].curModel = ShowFoodList;
+                [PopTableAlertView getInstance].curFoodObject = obj->food;
+                [[PopTableAlertView getInstance] show];
+            }
+        };
+    }
+    else
+    {
+        [PopTableAlertView getInstance].delegate = self;
+        [PopTableAlertView getInstance].curModel = ShowFoodList;
+        [PopTableAlertView getInstance].curFoodObject = food;
+        [[PopTableAlertView getInstance] show];
+    }
+}
+
+- (void)tapCellAction
+{
+    CGFloat startX = self.textLabel.frame.origin.x;
+    CGFloat endX = showCount.frame.origin.x;
+    
+    CGRect range = CGRectMake(startX, 0, endX - startX, self.frame.size.height);
+    
+    if (CGRectContainsPoint(range, [tap locationInView:self]))
+    {
+        if (touchShowAddtion)
+        {
+//            [PopTableAlertView getInstance].delegate = self;
+//            [PopTableAlertView getInstance].curModel = ShowAddtionInfor;
+//            [[PopTableAlertView getInstance] show];
+        }
+        else
+        {
+            if (![[food.isTaocan lowercaseString] isEqualToString:@"false"])
+            {
+                if ([food.foodlist count] == 0)
+                {
+                    [food getMingXi];
+                    __block typeof(self) obj = self;
+                    food.didFinishQuery = ^(NSMutableArray *ret)
+                    {
+                        if ([ret count] > 0)
+                        {
+                            [PopTableAlertView getInstance].delegate = obj;
+                            [PopTableAlertView getInstance].curModel = ShowFoodList;
+                            [PopTableAlertView getInstance].curFoodObject = obj->food;
+                            [[PopTableAlertView getInstance] show];
+                        }
+                    };
+                }
+                else
+                {
+                    [PopTableAlertView getInstance].delegate = self;
+                    [PopTableAlertView getInstance].curModel = ShowFoodList;
+                    [PopTableAlertView getInstance].curFoodObject = food;
+                    [[PopTableAlertView getInstance] show];
+                }
+            }
+            else
+            {
+                [self showFoodList];
+            }
+        }
+    }
+}
+/*
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated
 {
     [super setSelected:selected animated:animated];
-
+    
     if (selected)
     {
         if (touchShowAddtion)
@@ -482,33 +670,55 @@
         {
             if (![[food.isTaocan lowercaseString] isEqualToString:@"false"])
             {
-                return;
-            }
-            
-            if ([food.foodlist count] == 0)
-            {
-                [food getMingXi];
-                __block typeof(self) obj = self;
-                food.didFinishQuery = ^(NSMutableArray *ret) {
-                    [PopTableAlertView getInstance].delegate = obj;
+                if ([food.foodlist count] == 0)
+                {
+                    [food getMingXi];
+                    __block typeof(self) obj = self;
+                    food.didFinishQuery = ^(NSMutableArray *ret)
+                    {
+                        if ([ret count] > 0)
+                        {
+                            [PopTableAlertView getInstance].delegate = obj;
+                            [PopTableAlertView getInstance].curModel = ShowFoodList;
+                            [PopTableAlertView getInstance].curFoodObject = obj->food;
+                            [[PopTableAlertView getInstance] show];
+                        }
+                    };
+                }
+                else
+                {
+                    [PopTableAlertView getInstance].delegate = self;
                     [PopTableAlertView getInstance].curModel = ShowFoodList;
-                    [PopTableAlertView getInstance].curFoodObject = obj->food;
+                    [PopTableAlertView getInstance].curFoodObject = food;
                     [[PopTableAlertView getInstance] show];
-                };
+                }
             }
             else
             {
-                [PopTableAlertView getInstance].delegate = self;
-                [PopTableAlertView getInstance].curModel = ShowFoodList;
-                [PopTableAlertView getInstance].curFoodObject = food;
-                [[PopTableAlertView getInstance] show];
+                [self showFoodList];
             }
         }
     }
+ 
     // Configure the view for the selected state
 }
+*/
+#pragma mark UIAlertViewDelegate
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+    if (alertView.tag == 10010)//减操作
+    {
+        [self Decrease];
+    }
+    else if (alertView.tag == 10086)//加操作
+    {
+        [self Increase];
+    }
+    
+    [self showFoodList];
+}
 
-#pragma make UITextFieldDelegate
+#pragma mark UITextFieldDelegate
 - (void)textFieldDidBeginEditing:(UITextField *)textField
 {
     startCount = [textField.text intValue];

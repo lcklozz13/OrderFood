@@ -87,7 +87,7 @@
     [priceShow setEnabled:NO];
     priceShow.rightViewMode = UITextFieldViewModeAlways;
     UILabel *lab = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 40, 22)];
-    [lab setText:[NSString stringWithFormat:@"/%@", curFoodObject.danwei]];//显示单位
+    [lab setText:[[NSString alloc] initWithFormat:@"/%@", curFoodObject.danwei]];//显示单位
     [lab setFont:[UIFont boldSystemFontOfSize:18.0f]];
     [lab setBackgroundColor:[UIColor clearColor]];
     [lab setTextColor:[UIColor colorWithRed:102.0f/255.0f green:94.0f/255.0f blue:90.0f/255.0f alpha:1]];
@@ -101,7 +101,7 @@
 //    [lab release];
 //    [v_r release];
     
-    [priceShow setText:[NSString stringWithFormat:@"￥%@", curFoodObject.price]];//显示价格
+    [priceShow setText:[[NSString alloc] initWithFormat:@"￥%@", curFoodObject.price]];//显示价格
     [backBtn setImage:[UIImage imageNamed:@"icon_back.png"] forState:UIControlStateNormal];//设置返回按钮背景图
     [descrption setText:curFoodObject.description];//显示简介
     [descrption setTextColor:[UIColor colorWithRed:102.0f/255.0f green:94.0f/255.0f blue:90.0f/255.0f alpha:1]];

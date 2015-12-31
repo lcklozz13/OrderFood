@@ -13,12 +13,12 @@
 {
     static int g_index = 1;
     
-    return [NSString stringWithFormat:@"%07d", g_index++];
+    return [[NSString alloc] initWithFormat:@"%07d", g_index++];
 }
 
 + (NSString *)getInStruction:(NSString *)instruction withContents:(NSMutableArray *)contents
 {
-    NSMutableString *str = [NSMutableString stringWithString:[NSString stringWithFormat:@"%@%@#", [InstructionCreate getSerialNum], instruction]];
+    NSMutableString *str = [NSMutableString stringWithString:[[NSString alloc] initWithFormat:@"%@%@#", [InstructionCreate getSerialNum], instruction]];
     
     for (int i=0; i<[contents count]; i++)
     {

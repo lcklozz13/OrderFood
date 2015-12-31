@@ -10,29 +10,46 @@
 	<string>OrderFood</string>
 	<key>IDESourceControlProjectOriginsDictionary</key>
 	<dict>
-		<key>DAB57053-ABE8-45CE-B7D3-50547BCB04E3</key>
+		<key>84e2a79c-f5ef-46b2-bd1a-f64652f684d0++4137</key>
+		<string>svn://192.168.1.240/hcim/iphone_im/HcOnline/Online_New/HttpStaticLibay</string>
+		<key>97A78C70EEBFDAF870D20D5852EEF053D5381B9D</key>
 		<string>https://github.com/lcklozz13/OrderFood.git</string>
 	</dict>
 	<key>IDESourceControlProjectPath</key>
-	<string>OrderFood.xcodeproj/project.xcworkspace</string>
+	<string>OrderFood.xcodeproj</string>
 	<key>IDESourceControlProjectRelativeInstallPathDictionary</key>
 	<dict>
-		<key>DAB57053-ABE8-45CE-B7D3-50547BCB04E3</key>
+		<key>84e2a79c-f5ef-46b2-bd1a-f64652f684d0++4137</key>
+		<string>../..OrderFood/HttpStaticLibay/</string>
+		<key>97A78C70EEBFDAF870D20D5852EEF053D5381B9D</key>
 		<string>../..</string>
+	</dict>
+	<key>IDESourceControlProjectRepositoryRootDictionary</key>
+	<dict>
+		<key>84e2a79c-f5ef-46b2-bd1a-f64652f684d0++4137</key>
+		<string>svn://192.168.1.240/hcim</string>
 	</dict>
 	<key>IDESourceControlProjectURL</key>
 	<string>https://github.com/lcklozz13/OrderFood.git</string>
 	<key>IDESourceControlProjectVersion</key>
-	<integer>110</integer>
+	<integer>111</integer>
 	<key>IDESourceControlProjectWCCIdentifier</key>
-	<string>DAB57053-ABE8-45CE-B7D3-50547BCB04E3</string>
+	<string>97A78C70EEBFDAF870D20D5852EEF053D5381B9D</string>
 	<key>IDESourceControlProjectWCConfigurations</key>
 	<array>
 		<dict>
 			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
+			<string>public.vcs.subversion</string>
+			<key>IDESourceControlWCCIdentifierKey</key>
+			<string>84e2a79c-f5ef-46b2-bd1a-f64652f684d0++4137</string>
+			<key>IDESourceControlWCCName</key>
+			<string>HttpStaticLibay</string>
+		</dict>
+		<dict>
+			<key>IDESourceControlRepositoryExtensionIdentifierKey</key>
 			<string>public.vcs.git</string>
 			<key>IDESourceControlWCCIdentifierKey</key>
-			<string>DAB57053-ABE8-45CE-B7D3-50547BCB04E3</string>
+			<string>97A78C70EEBFDAF870D20D5852EEF053D5381B9D</string>
 			<key>IDESourceControlWCCName</key>
 			<string>OrderFood</string>
 		</dict>

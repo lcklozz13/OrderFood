@@ -77,6 +77,14 @@
     NSString *str = [InstructionCreate getInStruction:INS_GET_GOODS_LIST withContents:[NSMutableArray arrayWithObject:[NSMutableArray arrayWithObjects:roomId, categoryId, nil]]];
     NSLog(@"%@", str);
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
+    
+    if (getFoodList)
+    {
+        getFoodList = nil;
+        getFoodList = [[AsyncUdpSocket alloc] initWithDelegate:self];
+        [getFoodList setMaxReceiveBufferSize:92160];
+    }
+    
     [getFoodList receiveWithTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_LIST intValue]];
     [getFoodList sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_LIST intValue]];
 }

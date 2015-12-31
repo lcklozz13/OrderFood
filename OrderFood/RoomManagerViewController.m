@@ -238,7 +238,17 @@
     
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"查询房间状态。。。";
-    [[Public getInstance].juhua show:YES];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        
+        [[Public getInstance].juhua show:YES];
+    });
+    
+    if (checkRoomIDSocket)
+    {
+        checkRoomIDSocket = nil;
+        checkRoomIDSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [checkRoomIDSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_BX_ZT intValue]];
     [checkRoomIDSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_BX_ZT intValue]];
 
@@ -248,6 +258,34 @@
 {
     //初始化界面
     [super viewDidLoad];
+    
+    if ([[[Public getCurrentDeviceModel] lowercaseString] rangeOfString:@"mini"].location != NSNotFound)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            CGRect frame = categoryListView.frame;
+            frame.origin.x += 150;
+            frame.origin.y += 130;
+            
+            categoryListView.frame = frame;
+            
+            frame = detailListView.frame;
+            frame.origin.x += 150;
+            frame.origin.y += 130;
+            detailListView.frame = frame;
+            
+            frame = bgView.frame;
+            frame.origin.x += 130;
+            frame.origin.y += 150;
+            bgView.frame = frame;
+            
+            frame = searchbar.frame;
+            frame.origin.x += 130;
+            frame.origin.y += 150;
+            searchbar.frame = frame;
+        });
+    }
+    
     // Do any additional setup after loading the view from its nib.
     if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)])
     {
@@ -296,7 +334,11 @@
     }
 
     foodPictureViewArray = [[NSMutableArray alloc] init];
-    self.title = [NSString stringWithFormat:@"点餐-%@包厢", roomName];//标题
+#if IS_DEMO_STYLE
+    self.title = [[NSString alloc] initWithFormat:@"点餐-%@包厢（预览版）", roomName];//标题
+#else
+    self.title = [[NSString alloc] initWithFormat:@"点餐-%@包厢", roomName];//标题
+#endif
     
     UIButton *btnL = [UIButton buttonWithType:UIButtonTypeCustom];//返回按钮
     [btnL setImage:[UIImage imageNamed:@"icon_back.png"] forState:UIControlStateNormal];
@@ -387,7 +429,7 @@
             total += [food.price floatValue] * food.bookCount;
         }
         
-        [self.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+        [self.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
         CGRect r = self.showTotalLab.frame;
         r.size.width = (30 + [self.showTotalLab.text sizeWithFont:self.showTotalLab.font].width);
         self.showTotalLab.frame = r;
@@ -513,7 +555,7 @@
             total += [food.price floatValue] * food.bookCount;
         }
         
-        [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+        [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
         CGRect r = obj.showTotalLab.frame;
         r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
         obj.showTotalLab.frame = r;
@@ -560,6 +602,13 @@
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"查询已下清单";
     [[Public getInstance].juhua show:YES];
+    
+    if (bookAndFoodSocket)
+    {
+        bookAndFoodSocket = nil;
+        bookAndFoodSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [bookAndFoodSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_ROOM_BOOK intValue]];
     [bookAndFoodSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_ROOM_BOOK intValue]];
 }
@@ -612,9 +661,14 @@
 //下单操作
 - (void)orderAction
 {
-    int count = [bookedArray count];
+    int count = 0;
     
-    if (count == 0)
+    for (FoodObject *ibj in bookedArray)
+    {
+        count += [ibj.foodlist count] + 1;
+    }
+    
+    if ([bookedArray count] == 0)
     {
         MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
         
@@ -627,47 +681,32 @@
         return;
     }
     
-    FoodObject *food1 = [bookedArray objectAtIndex:0];
     
-    NSString *addtion = @"";
+    NSMutableArray *dataArray = [[NSMutableArray alloc] init];
     
-    if (food1.addtionInfor)
-    {
-        addtion = food1.addtionInfor;
-    }
-    
-    NSMutableArray *first = [NSMutableArray arrayWithObjects:roomId, [Public getInstance].userCode, [NSString stringWithFormat:@"%d", count], food1.foodId, food1.foodName, [NSString stringWithFormat:@"%d", food1.bookCount], addtion, nil];
-    NSMutableArray *dataArray = [NSMutableArray arrayWithObject:first];
-    
-    if ([food1.foodlist count] > 0)
-    {
-        NSArray *allkey = [food1.taocanDict allKeys];
-        
-        for (NSString *key in allkey)
-        {
-            NSArray *foods = [food1.taocanDict objectForKey:key];
-            
-            for (TaoCanMingxi *mingxi in foods)
-            {
-                NSMutableArray *ar = [NSMutableArray arrayWithObjects:mingxi.foodID, mingxi.foodName, [NSString stringWithFormat:@"%d", mingxi.foodCount * food1.bookCount], @"", nil];
-                [dataArray addObject:ar];
-            }
-        }
-    }
-    
-    for (int i=1; i<count; i++)
+    for (int i=0; i<[bookedArray count]; i++)
     {
         FoodObject *food = [bookedArray objectAtIndex:i];
-        addtion = @"";
+        NSString *addtion = @"";
         
         if (food.addtionInfor)
         {
             addtion = food.addtionInfor;
         }
         
-        NSMutableArray *ar = [NSMutableArray arrayWithObjects:food.foodId, food.foodName, [NSString stringWithFormat:@"%d", food.bookCount], addtion, nil];
+        NSMutableArray *ar = nil;
+        
+        if (i==0)
+        {
+            ar = [NSMutableArray arrayWithObjects:roomId, [Public getInstance].userCode, [[NSString alloc] initWithFormat:@"%d", count], food.foodId, food.foodName, [[NSString alloc] initWithFormat:@"%d", food.bookCount], addtion, food.price, nil];
+        }
+        else
+        {
+            ar = [NSMutableArray arrayWithObjects:food.foodId, food.foodName, [[NSString alloc] initWithFormat:@"%d", food.bookCount], addtion, food.price, nil];
+        }
+        
         [dataArray addObject:ar];
-        if ([food.foodlist count] > 0)
+        if ([food.foodlist count] > 0 && [[food.isTaocan lowercaseString] isEqualToString:@"false"])
         {
             NSArray *allkey = [food.taocanDict allKeys];
             
@@ -677,7 +716,19 @@
                 
                 for (TaoCanMingxi *mingxi in foods)
                 {
-                    NSMutableArray *ar = [NSMutableArray arrayWithObjects:mingxi.foodID, mingxi.foodName, [NSString stringWithFormat:@"%d", mingxi.foodCount * food.bookCount], @"", nil];
+                    NSMutableArray *ar = nil;
+                    
+                    if (!mingxi.isguding)
+                    {
+                        //可选套餐
+                        ar = [NSMutableArray arrayWithObjects:mingxi.foodID, mingxi.foodName, [[NSString alloc] initWithFormat:@"%d", mingxi.foodCount/* * food.bookCount*/], @"", @"0", nil];
+                    }
+                    else
+                    {
+                        //固定套餐
+                        ar = [NSMutableArray arrayWithObjects:mingxi.foodID, mingxi.foodName, [[NSString alloc] initWithFormat:@"%d", mingxi.foodCount * food.bookCount], @"", @"0", nil];
+                    }
+                    
                     [dataArray addObject:ar];
                 }
             }
@@ -685,12 +736,20 @@
     }
     
     NSString *str = [InstructionCreate getInStruction:INS_BOOK withContents:dataArray];
-    str = [str stringByReplacingCharactersInRange:NSRangeFromString([NSString stringWithFormat:@"{%d, 1}", [str length] - 1]) withString:@"||;"];
+    NSString *lastString = [[NSString alloc] initWithFormat:@"||@%@;", [Public getInstance].userName];
+    str = [str stringByReplacingCharactersInRange:NSRangeFromString([[NSString alloc] initWithFormat:@"{%d, 1}", [str length] - 1]) withString:lastString];
     NSLog(@"%@", str);
     
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在提交订单";
     [[Public getInstance].juhua show:YES];
+    
+    if (getCategory)
+    {
+        getCategory = nil;
+        getCategory = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [getCategory receiveWithTimeout:MAX_TIMEOUT tag:[INS_BOOK intValue]];
     [getCategory sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_BOOK intValue]];
 }
@@ -701,7 +760,16 @@
     NSLog(@"%@", str);
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在获取物品类别列表";
-    [[Public getInstance].juhua show:YES];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [[Public getInstance].juhua show:YES];
+    });
+    
+    if (getCategory)
+    {
+        getCategory = nil;
+        getCategory = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [getCategory receiveWithTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_CATEGORY_LIST intValue]];
     [getCategory sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_CATEGORY_LIST intValue]];
     
@@ -714,6 +782,13 @@
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在获取物品列表";
     [[Public getInstance].juhua show:YES];
+    
+    if (getFoodList)
+    {
+        getFoodList = nil;
+        getFoodList = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [getFoodList receiveWithTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_LIST intValue]];
     [getFoodList sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_GET_GOODS_LIST intValue]];
 }
@@ -770,7 +845,14 @@
                 };
                 
                 view.didDelete = ^(FoodObject *object) {//删除
-                    [obj.bookedArray removeObject:object];
+                    if ([obj.bookedArray containsObject:object])
+                    {
+                        [obj.bookedArray removeObject:object];
+                    }
+                    else
+                    {
+                        object.bookCount = 0;
+                    }
                 };
                 
                 view.refreshBlock = ^(){//刷新
@@ -781,7 +863,7 @@
                         total += [food.price floatValue] * food.bookCount;
                     }
                     
-                    [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+                    [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
                     CGRect r = obj.showTotalLab.frame;
                     r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
                     obj.showTotalLab.frame = r;
@@ -834,7 +916,6 @@
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"获取物品类别列表失败" message:@"获取物品类别列表失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
         }
         else
         {
@@ -864,6 +945,7 @@
                                 {
                                     if ([showobj.foodId isEqualToString:objfood.foodId]) {
                                         showobj.bookCount = objfood.bookCount;
+                                        objfood.referenceObject = showobj;
                                     }
                                 }
                                 objfood.ischeck = YES;
@@ -879,11 +961,9 @@
                         [obje.categoryListView selectRowAtIndexPath:[NSIndexPath indexPathForRow:ta.index inSection:0] animated:NO scrollPosition:UITableViewScrollPositionMiddle];
                     }
                 };
-//                [obj release];
             }
             
             [categoryListView reloadData];
-//            [parse release];
         }
     }
     else if (tag == [INS_GET_GOODS_LIST intValue])//食物列表
@@ -892,7 +972,6 @@
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"获取物品列表失败" message:@"获取物品列表失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
         }
         else
         {
@@ -901,7 +980,6 @@
             NSLog(@"%@", parse.contents);
             self.curFoodList = parse;
             [detailListView reloadData];
-//            [parse release];
         }
     }
     else if (tag == [INS_BOOK intValue])//下单
@@ -919,9 +997,39 @@
         for (FoodObject *object in bookedArray)
         {
             object.bookCount = 0;
+            
+            if ([object.foodlist count] > 0 && [[object.isTaocan lowercaseString] isEqualToString:@"false"])
+            {
+                NSArray *allkey = [object.taocanDict allKeys];
+                
+                for (NSString *key in allkey)
+                {
+                    NSArray *foods = [object.taocanDict objectForKey:key];
+                    
+                    for (TaoCanMingxi *mingxi in foods)
+                    {
+                        if (!mingxi.isguding)
+                        {
+                            mingxi.foodCount = 0;
+                        }
+                    }
+                }
+            }
         }
         
         [bookedArray removeAllObjects];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [showTotalLab setText:@"￥0.0"];
+            CGRect r = showTotalLab.frame;
+            r.size.width = (30 + [showTotalLab.text sizeWithFont:showTotalLab.font].width);
+            showTotalLab.frame = r;
+        });
+        
+        if (curSelectView)
+        {
+            [curSelectView.view removeFromSuperview];
+            self.curSelectView = nil;
+        }
     }
     else if (tag == [INS_ROOM_BOOK intValue])//查询已选列表
     {
@@ -929,7 +1037,6 @@
         {
             UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"查询失败" message:@"查询已选列表操作失败，稍后请重试。" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
             [view show];
-//            [view release];
         }
         else
         {
@@ -969,22 +1076,18 @@
                         
                         [ret addObject:food];
                     }
-                    
-//                    [food release];
                 }
                 
                 __block typeof(self) obj = self;
                 showBookListView = [[ShowBookFoodListViewController alloc] initWithDict:orderedFoodDic];
                 showBookListView.roomId = roomId;
                 CGRect r = [UIScreen mainScreen].bounds;
-                //    view.view.frame = r;
                 showBookListView.view.transform = CGAffineTransformMakeRotation([[Public getInstance] statubarUIInterfaceOrientationAngleOfOrientation]);
                 showBookListView.view.center = CGPointMake(r.size.width/2.0f, r.size.height/2.0f);
                 
                 showBookListView.didBack = ^(ShowBookFoodListViewController *controller)//返回回调块
                 {
                     [controller.view removeFromSuperview];
-//                    [controller release];
                     obj.curSelectView = nil;
                     float total = 0.0f;
                     
@@ -993,7 +1096,7 @@
                         total += [food.price floatValue] * food.bookCount;
                     }
                     
-                    [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+                    [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
                     CGRect r = obj.showTotalLab.frame;
                     r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
                     obj.showTotalLab.frame = r;
@@ -1001,12 +1104,11 @@
                 
                 [[[UIApplication sharedApplication] keyWindow] addSubview:showBookListView.view];
             }
-//            [parse release];
         }
     }
     else if (tag == [INS_BX_ZT intValue])
     {
-        if ([str length] == 0)//查询失败
+        if ([str length] == 0)//查询失败tr
         {
             return NO;
         }
@@ -1108,7 +1210,7 @@
             title = [sub.foodCategory objectAtIndex:1];
         }
         
-        [cell.textLabel setText:[NSString stringWithFormat:@"%@(%d)", title, [sub.foodListArray count]]];
+        [cell.textLabel setText:[[NSString alloc] initWithFormat:@"%@(%d)", title, [sub.foodListArray count]]];
         
         return cell;
     }
@@ -1116,7 +1218,7 @@
     {
         if (isListStyple)
         {
-            NSString     *cellForCategory = [NSString stringWithFormat:@"cellForCategory%d", indexPath.row];
+            NSString     *cellForCategory = [[NSString alloc] initWithFormat:@"cellForCategory%d", indexPath.row];
             
             FoodListCell *cell = [detailListView dequeueReusableCellWithIdentifier:cellForCategory];
             
@@ -1146,7 +1248,14 @@
             };
             
             cell.didDelete = ^(FoodObject *object) {//删除食物
-                [obj.bookedArray removeObject:object];
+                if ([obj.bookedArray containsObject:object])
+                {
+                    [obj.bookedArray removeObject:object];
+                }
+                else
+                {
+                    object.bookCount = 0;
+                }
             };
             
             cell.refreshBlock = ^(){//刷新食物
@@ -1157,7 +1266,7 @@
                     total += [food.price floatValue] * food.bookCount;
                 }
                 
-                [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+                [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
                 CGRect r = obj.showTotalLab.frame;
                 r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
                 obj.showTotalLab.frame = r;
@@ -1180,7 +1289,7 @@
         }
         else
         {
-            NSString     *cellForCategory = [NSString stringWithFormat:@"cellForImageViewCategory%d", indexPath.row];
+            NSString     *cellForCategory = [[NSString alloc] initWithFormat:@"cellForImageViewCategory%d", indexPath.row];
             UITableViewCell *cell = [detailListView dequeueReusableCellWithIdentifier:cellForCategory];
             
             if (!cell)
@@ -1301,7 +1410,6 @@
 {
     if (tableView == categoryListView)
     {
-//        [searchbar setText:@""];
         [searchbar resignFirstResponder];
         [searchbar setShowsCancelButton:NO animated:NO];
         tableviewCategory = NO;
@@ -1325,7 +1433,7 @@
                     FoodPictureView *view = [[FoodPictureView alloc] initWithFrame:CGRectMake(0, 0, 247, 290) foodObject:obj1];
                     [foodPictureViewArray addObject:view];
                     [view setBackgroundColor:[UIColor clearColor]];
-//                    [view release];
+
                     view.didAddtion = ^(FoodObject *object) {//添加食物
                         BOOL exist = NO;
                         for (FoodObject *food in obj.bookedArray)
@@ -1344,7 +1452,15 @@
                     };
                     
                     view.didDelete = ^(FoodObject *object) {//删除已选食物
-                        [obj.bookedArray removeObject:object];
+                        
+                        if ([obj.bookedArray containsObject:object])
+                        {
+                            [obj.bookedArray removeObject:object];
+                        }
+                        else
+                        {
+                            object.bookCount = 0;
+                        }
                     };
                     
                     view.refreshBlock = ^(){//刷新界面
@@ -1355,7 +1471,7 @@
                             total += [food.price floatValue] * food.bookCount;
                         }
                         
-                        [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+                        [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
                         CGRect r = obj.showTotalLab.frame;
                         r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
                         obj.showTotalLab.frame = r;
@@ -1413,68 +1529,7 @@
 
 - (void)searchBar:(UISearchBar *)searchBar textDidChange:(NSString *)searchText
 {
-//    [searchArray removeAllObjects];
     tableviewCategory = YES;
-    
-    /*
-    if (!isListStyple)
-    {
-        for (FoodPictureView *view in foodPictureViewArray)
-        {
-            [view removeFromSuperview];
-            NSString *str = [NSString stringWithFormat:@"%@%@", view.food.foodName, view.food.searchStr];
-            BOOL isMember = NO;
-            
-            NSString *searchTextNew = [searchText uppercaseString];
-            for (int j=0; j<[searchTextNew length]; j++)
-            {
-                unichar char1 = [searchTextNew characterAtIndex:j];
-                if ([str rangeOfString:[NSString stringWithFormat:@"%c", char1]].location != NSNotFound)
-                {
-                    isMember = YES;
-                }
-                else
-                {
-                    isMember = NO;
-                    break;
-                }
-            }
-            
-            if (isMember)
-            {
-                [searchArray addObject:view];
-            }
-        }
-    }
-    else
-    {
-        for (FoodObject *obj1 in curFoodCategoryObject.foodListArray)
-        {
-            NSString *str = [NSString stringWithFormat:@"%@%@", obj1.foodName, obj1.searchStr];
-            BOOL isMember = NO;
-            
-            NSString *searchTextNew = [searchText uppercaseString];
-            for (int j=0; j<[searchTextNew length]; j++)
-            {
-                unichar char1 = [searchTextNew characterAtIndex:j];
-                if ([str rangeOfString:[NSString stringWithFormat:@"%c", char1]].location != NSNotFound)
-                {
-                    isMember = YES;
-                }
-                else
-                {
-                    isMember = NO;
-                    break;
-                }
-            }
-            
-            if (isMember)
-            {
-                [searchArray addObject:obj1];
-            }
-        }
-    }
-    */
     
     if (!isListStyple)
     {
@@ -1499,18 +1554,25 @@
         {
             for (FoodObject *obj1 in category.foodListArray)
             {
-                NSString *str = [NSString stringWithFormat:@"%@%@", obj1.foodName, obj1.searchStr];
+                NSString *str = [[NSString alloc] initWithFormat:@"%@%@", obj1.searchStr, obj1.foodName];
                 BOOL isMember = NO;
-                
+                obj1.searchIndex = 0;
                 NSString *searchTextNew = [searchText uppercaseString];
                 for (int j=0; j<[searchTextNew length]; j++)
                 {
-                    unichar char1 = [searchTextNew characterAtIndex:j];
-                    NSString *searchStr = [NSString stringWithFormat:@"%c", char1];
-                    searchStr = [searchStr stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
+                    NSRange range = NSRangeFromString([[NSString alloc] initWithFormat:@"{%d, 1}", j]);
+                    NSString *searchStr = [searchTextNew substringWithRange:range];
+                    
+                    unichar charValue = [searchStr characterAtIndex:0];
+                    
+                    if (charValue >= 0x4e00 && charValue <= 0x9fa5)
+                    {
+                        str = [[NSString alloc] initWithFormat:@"%@%@", obj1.foodName, obj1.searchStr];
+                    }
                     
                     if ([str rangeOfString:searchStr].location != NSNotFound)
                     {
+                        obj1.searchIndex += ([searchTextNew length] - j) << [str rangeOfString:searchStr].location;
                         isMember = YES;
                     }
                     else
@@ -1544,7 +1606,14 @@
                     };
                     
                     view.didDelete = ^(FoodObject *object) {//删除已选食物
-                        [obj.bookedArray removeObject:object];
+                        if ([obj.bookedArray containsObject:object])
+                        {
+                            [obj.bookedArray removeObject:object];
+                        }
+                        else
+                        {
+                            object.bookCount = 0;
+                        }
                     };
                     
                     view.refreshBlock = ^(){//刷新界面
@@ -1555,7 +1624,7 @@
                             total += [food.price floatValue] * food.bookCount;
                         }
                         
-                        [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+                        [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
                         CGRect r = obj.showTotalLab.frame;
                         r.size.width = (30 + [obj.showTotalLab.text sizeWithFont:obj.showTotalLab.font].width);
                         obj.showTotalLab.frame = r;
@@ -1565,6 +1634,24 @@
                 }
             }
         }
+        
+        //排序
+        [searchArray sortUsingComparator:^NSComparisonResult(id obj1, id obj2)
+         {
+             FoodPictureView *ob1 = obj1;
+             FoodPictureView *ob2 = obj2;
+             
+             if (ob1.food.searchIndex > ob2.food.searchIndex)
+             {
+                 return NSOrderedDescending;
+             }
+             else if (ob1.food.searchIndex < ob2.food.searchIndex)
+             {
+                 return NSOrderedAscending;
+             }
+             
+             return NSOrderedSame;
+         }];
     }
     else
     {
@@ -1574,18 +1661,26 @@
         {
             for (FoodObject *obj1 in category.foodListArray)
             {
-                NSString *str = [NSString stringWithFormat:@"%@%@", obj1.foodName, obj1.searchStr];
+                NSString *str = [[NSString alloc] initWithFormat:@"%@%@", obj1.searchStr, obj1.foodName];
                 BOOL isMember = NO;
                 
                 NSString *searchTextNew = [searchText uppercaseString];
+                obj1.searchIndex = 0;
+                
                 for (int j=0; j<[searchTextNew length]; j++)
                 {
-                    unichar char1 = [searchTextNew characterAtIndex:j];
-                    NSString *searchStr = [NSString stringWithFormat:@"%c", char1];
-                    searchStr = [searchStr stringByAddingPercentEscapesUsingEncoding: NSUTF8StringEncoding];
+                    NSRange range = NSRangeFromString([[NSString alloc] initWithFormat:@"{%d, 1}", j]);
+                    NSString *searchStr = [searchTextNew substringWithRange:range];
+                    unichar charValue = [searchStr characterAtIndex:0];
+                    
+                    if (charValue >= 0x4e00 && charValue <= 0x9fa5)
+                    {
+                        str = [[NSString alloc] initWithFormat:@"%@%@", obj1.foodName, obj1.searchStr];
+                    }
                     
                     if ([str rangeOfString:searchStr].location != NSNotFound)
                     {
+                        obj1.searchIndex += ([searchTextNew length] - j) << [str rangeOfString:searchStr].location;
                         isMember = YES;
                     }
                     else
@@ -1601,8 +1696,26 @@
                 }
             }
         }
+        
+        //排序
+        [searchArray sortUsingComparator:^NSComparisonResult(id obj1, id obj2)
+        {
+            FoodObject *ob1 = obj1;
+            FoodObject *ob2 = obj2;
+            
+            if (ob1.searchIndex > ob2.searchIndex)
+            {
+                return NSOrderedDescending;
+            }
+            else if (ob1.searchIndex < ob2.searchIndex)
+            {
+                return NSOrderedAscending;
+            }
+            
+            return NSOrderedSame;
+        }];
     }
-    
+
     isEdit = NO;
     [detailListView reloadData];
     isEdit = YES;

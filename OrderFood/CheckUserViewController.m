@@ -102,6 +102,13 @@
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在验证。。。";
     [[Public getInstance].juhua show:YES];
+    
+    if (sendSocket)
+    {
+        sendSocket = nil;
+        sendSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [sendSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_LOGIN intValue]];
     [sendSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_LOGIN intValue]];
 }

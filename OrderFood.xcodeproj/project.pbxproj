@@ -109,6 +109,8 @@
 		4E3CD07118D8892F00CD814A /* TSAlertViewButtonBackground_Highlighted.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E3CD06A18D8892F00CD814A /* TSAlertViewButtonBackground_Highlighted.png */; };
 		4E3CD07218D8892F00CD814A /* TSAlertViewCancelButtonBackground.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E3CD06B18D8892F00CD814A /* TSAlertViewCancelButtonBackground.png */; };
 		4E3CD07318D8892F00CD814A /* TSAlertViewMessageListViewShadow.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E3CD06C18D8892F00CD814A /* TSAlertViewMessageListViewShadow.png */; };
+		4E55A7361B91EFBB00094174 /* b_cleanup@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E55A7341B91EFBB00094174 /* b_cleanup@2x.png */; };
+		4E55A7371B91EFBB00094174 /* mark_cleanup@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = 4E55A7351B91EFBB00094174 /* mark_cleanup@2x.png */; };
 		4E7137E4181F5A76001D1C21 /* ShowActionViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4E7137E3181F5A76001D1C21 /* ShowActionViewController.xib */; };
 		4E7137E7181FA8AB001D1C21 /* ShowBookFoodListViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = 4E7137E6181FA8AB001D1C21 /* ShowBookFoodListViewController.xib */; };
 /* End PBXBuildFile section */
@@ -261,6 +263,8 @@
 		4E3CD06A18D8892F00CD814A /* TSAlertViewButtonBackground_Highlighted.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TSAlertViewButtonBackground_Highlighted.png; sourceTree = "<group>"; };
 		4E3CD06B18D8892F00CD814A /* TSAlertViewCancelButtonBackground.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TSAlertViewCancelButtonBackground.png; sourceTree = "<group>"; };
 		4E3CD06C18D8892F00CD814A /* TSAlertViewMessageListViewShadow.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = TSAlertViewMessageListViewShadow.png; sourceTree = "<group>"; };
+		4E55A7341B91EFBB00094174 /* b_cleanup@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "b_cleanup@2x.png"; sourceTree = "<group>"; };
+		4E55A7351B91EFBB00094174 /* mark_cleanup@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "mark_cleanup@2x.png"; sourceTree = "<group>"; };
 		4E7137E3181F5A76001D1C21 /* ShowActionViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ShowActionViewController.xib; sourceTree = "<group>"; };
 		4E7137E6181FA8AB001D1C21 /* ShowBookFoodListViewController.xib */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.xib; path = ShowBookFoodListViewController.xib; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -475,6 +479,8 @@
 		08E61C9817BD1B5E007F0FDE /* png */ = {
 			isa = PBXGroup;
 			children = (
+				4E55A7341B91EFBB00094174 /* b_cleanup@2x.png */,
+				4E55A7351B91EFBB00094174 /* mark_cleanup@2x.png */,
 				4E131F96198A8B7100804DE5 /* icon_checked@2x.png */,
 				4E131F891984711100804DE5 /* b_over@2x.png */,
 				4E131F8A1984711100804DE5 /* mark_over@2x.png */,
@@ -655,6 +661,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				08D0086717981ED000065F7F /* InfoPlist.strings in Resources */,
+				4E55A7361B91EFBB00094174 /* b_cleanup@2x.png in Resources */,
 				08E143C5179D801900B27347 /* Default-Portrait~ipad.png in Resources */,
 				08E143C7179D802100B27347 /* Default-Portrait@2x~ipad.png in Resources */,
 				0842EAA8179EBE820025310E /* LoginViewController.xib in Resources */,
@@ -675,6 +682,7 @@
 				08E61CB617BD1B5F007F0FDE /* b_top@2x.png in Resources */,
 				4E3CD06F18D8892F00CD814A /* TSAlertViewBackground2.png in Resources */,
 				4E261F1A181E57FD00E34D44 /* b_test@2x.png in Resources */,
+				4E55A7371B91EFBB00094174 /* mark_cleanup@2x.png in Resources */,
 				08E61CB717BD1B5F007F0FDE /* b_using@2x.png in Resources */,
 				08E61CB817BD1B5F007F0FDE /* btn_+@2x.png in Resources */,
 				08E61CB917BD1B5F007F0FDE /* btn_-@2x.png in Resources */,
@@ -838,8 +846,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
+				CODE_SIGN_IDENTITY = "iPhone Developer: huijie xie (A42Q36PSSP)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: huijie xie (A42Q36PSSP)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SYSTEM_APPS_DIR)/Xcode.app/Contents/Developer/Library/Frameworks\"",
@@ -849,9 +857,9 @@
 				INFOPLIST_FILE = "OrderFood/OrderFood-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
+				PROVISIONING_PROFILE = "e6d8200a-941f-4c18-8445-f1ad1f96ab83";
 				TARGETED_DEVICE_FAMILY = 2;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "armv7 armv7s arm64";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Debug;
@@ -860,8 +868,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
-				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: DW T (592YXAMWC6)";
+				CODE_SIGN_IDENTITY = "iPhone Developer: huijie xie (A42Q36PSSP)";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer: huijie xie (A42Q36PSSP)";
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"\"$(SYSTEM_APPS_DIR)/Xcode.app/Contents/Developer/Library/Frameworks\"",
@@ -871,10 +879,10 @@
 				INFOPLIST_FILE = "OrderFood/OrderFood-Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 5.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				PROVISIONING_PROFILE = "";
-				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "61be6a97-2f02-4c20-853e-56def28a58b7";
+				PROVISIONING_PROFILE = "e6d8200a-941f-4c18-8445-f1ad1f96ab83";
+				"PROVISIONING_PROFILE[sdk=iphoneos*]" = "e6d8200a-941f-4c18-8445-f1ad1f96ab83";
 				TARGETED_DEVICE_FAMILY = 2;
-				VALID_ARCHS = "armv7 armv7s";
+				VALID_ARCHS = "armv7 armv7s arm64";
 				WRAPPER_EXTENSION = app;
 			};
 			name = Release;

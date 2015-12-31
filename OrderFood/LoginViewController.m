@@ -71,16 +71,53 @@
 - (void)viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
-    if (self.pwd) {
-//        [self.pwd setText:@""];
-    }
+    
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(0.25 * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+        NSIndexPath *index = [NSIndexPath indexPathForRow:2 inSection:0];
+        [inputTableView scrollToRowAtIndexPath:index atScrollPosition:UITableViewScrollPositionMiddle animated:NO];
+        if (self.pwd)
+        {
+            [self.pwd setText:@""];
+        }
+    });
 }
 
 - (void)viewDidLoad
 {
     [super viewDidLoad];
     [self.view setBackgroundColor:[UIColor clearColor]];
+#if IS_DEMO_STYLE
+    self.title = @"系统登陆（预览版）";
+#else
     self.title = @"系统登陆";
+#endif
+    
+    if ([[[Public getCurrentDeviceModel] lowercaseString] rangeOfString:@"mini"].location != NSNotFound)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            CGRect frame = inputTableView.frame;
+            frame.origin.x += 150;
+            frame.origin.y += 130;
+            
+            inputTableView.frame = frame;
+            
+            frame = backgroupImageView.frame;
+            frame.origin.x += 150;
+            frame.origin.y += 150;
+            backgroupImageView.frame = frame;
+            
+            frame = synchronousBtn.frame;
+            frame.origin.x += 130;
+            frame.origin.y += 150;
+            synchronousBtn.frame = frame;
+            
+            frame = loginBtn.frame;
+            frame.origin.x += 130;
+            frame.origin.y += 150;
+            loginBtn.frame = frame;
+        });
+    }
     
     if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)])
     {
@@ -142,6 +179,13 @@
     NSString *str = [InstructionCreate getInStruction:INS_PUBLISH_DESCRIPTION withContents:nil];
     NSLog(@"%@", str);
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
+    
+    if (publishDesSocket)
+    {
+        publishDesSocket = nil;
+        publishDesSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [publishDesSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_PUBLISH_DESCRIPTION intValue]];
     [publishDesSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_PUBLISH_DESCRIPTION intValue]];
 }
@@ -304,6 +348,13 @@
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在同步";
     [[Public getInstance].juhua show:YES];
+    
+    if (checkSocket)
+    {
+        checkSocket = nil;
+        checkSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [checkSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_CHECK intValue]];
     [checkSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_CHECK intValue]];
 }
@@ -336,6 +387,28 @@
         return;
     }
     
+#if IS_DEMO_STYLE
+    NSUserDefaults *userDefault = [NSUserDefaults standardUserDefaults];
+    NSDate *date = [userDefault objectForKey:@"LastTime"];
+    
+    if (!date)
+    {
+        [userDefault setObject:[NSDate date] forKey:@"LastTime"];
+        [userDefault synchronize];
+    }
+    else
+    {
+        NSTimeInterval interval = [[NSDate date] timeIntervalSinceDate:date];
+        
+        if (interval >= 24 * 60 * 60 * 15)
+        {
+            UIAlertView *view = [[UIAlertView alloc] initWithTitle:@"警告⚠" message:@"预览版使用时间已到期，请联系有关部门！" delegate:nil cancelButtonTitle:@"确定" otherButtonTitles:nil, nil];
+            [view show];
+            return;
+        }
+    }
+#endif
+    
     [Public getInstance].serviceIpAddr = [NSString stringWithString:server.text];
     
     NSString *str = [InstructionCreate getInStruction:INS_LOGIN withContents:[NSMutableArray arrayWithObject:[NSMutableArray arrayWithObjects:account.text, pwd.text, nil]]];
@@ -343,6 +416,13 @@
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在登陆";
     [[Public getInstance].juhua show:YES];
+    
+    if (sendSocket)
+    {
+        sendSocket = nil;
+        sendSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [sendSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_LOGIN intValue]];
     [sendSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_LOGIN intValue]];
 }
@@ -522,7 +602,8 @@
 #pragma mark UITableViewDelegate
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    return 56.0f;
+//    return 56.0f;
+    return 100.0f;
 }
 
 #pragma mark UITableViewDataSource
@@ -535,11 +616,12 @@
 {
     static NSString *identifier = @"cellForLogin";
     
-    LoginViewCell *cell = [tableView dequeueReusableCellWithIdentifier:identifier];
+    NSString *curIdentifier = [[NSString alloc] initWithFormat:@"%@%d", identifier, indexPath.row];
+    LoginViewCell *cell = [tableView dequeueReusableCellWithIdentifier:curIdentifier];
     
     if (!cell)
     {
-        cell = /*[*/[[LoginViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:identifier] /*autorelease]*/;
+        cell = /*[*/[[LoginViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:curIdentifier] /*autorelease]*/;
         [cell setSelectionStyle:UITableViewCellSelectionStyleNone];
     }
     
@@ -547,7 +629,7 @@
     {
         self.server = cell.content;
         self.server.delegate = self;
-        [cell.titleLab setText:@"服务器地址   "];
+        [cell.titleLab setText:@"服务器地址："];
         [self.server setText:SERVICE_IPADDR];
         
         if ([[Public getInstance].getDefaultIPAddress length] > 0)//有默认ip地址填入默认ip地址
@@ -559,21 +641,21 @@
     {
         self.account = cell.content;
         self.account.delegate = self;
-        [cell.titleLab setText:@"登录帐户   "];
+        [cell.titleLab setText:@"登录帐户："];
         
         if ([[Public getInstance].getDefaultUserName length] > 0)//有默认ip地址填入默认ip地址
         {
             [self.account setText:[Public getInstance].getDefaultUserName];
         }
-        [self.account setText:@"sa"];
+//        [self.account setText:@"sa"];
     }
     else if (indexPath.row == 2)
     {
         self.pwd = cell.content;
         self.pwd.delegate = self;
         [self.pwd setSecureTextEntry:YES];
-        [cell.titleLab setText:@"登录密码   "];
-        [self.pwd setText:@"123456"];
+        [cell.titleLab setText:@"登录密码："];
+//        [self.pwd setText:@"123456"];
     }
     
     return cell;

@@ -36,6 +36,8 @@
 @synthesize ischeck;
 @synthesize taocanCountDict;
 @synthesize isTaocan;
+@synthesize searchIndex;
+@synthesize referenceObject;
 
 - (id)init
 {
@@ -90,8 +92,11 @@
             self.isTaocan = parse[9];
         }
         //开始下载预览图
+        
+        __block typeof(self) Obj = self;
+        
         dispatch_async([Public getInstance].getImageQueue, ^(){
-            [getImage GetSeverUrl:url];
+            [Obj->getImage GetSeverUrl:url];
         });
     }
     
@@ -130,6 +135,13 @@
 {
     NSString *str = [InstructionCreate getInStruction:INS_TC_MX withContents:[NSMutableArray arrayWithObject:foodId]];
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
+    
+    if (getmingxi)
+    {
+        getmingxi = nil;
+        getmingxi = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [getmingxi receiveWithTimeout:MAX_TIMEOUT tag:[INS_TC_MX intValue]];
     [getmingxi sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_TC_MX intValue]];
 }
@@ -182,10 +194,13 @@
  * Called if an error occurs while trying to send a datagram.
  * This could be due to a timeout, or something more serious such as the data being too large to fit in a sigle packet.
  **/
-//- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error
-//{
-//    
-//}
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotSendDataWithTag:(long)tag dueToError:(NSError *)error
+{
+    if (didFinishQuery)
+    {
+        didFinishQuery(foodlist);
+    }
+}
 
 /**
  * Called when the socket has received the requested datagram.
@@ -207,9 +222,10 @@
  **/
 - (BOOL)onUdpSocket:(AsyncUdpSocket *)sock didReceiveData:(NSData *)data withTag:(long)tag fromHost:(NSString *)host port:(UInt16)port
 {
+    [[Public getInstance].juhua hide:YES];
     NSString *str = [[NSString alloc] initWithData:data encoding:[Public getInstance].gbkEncoding]/*@"IP:115.28.9.219    0102#7,30137,丽丽薯片100g,1,包,1,||30103,柠檬菊花茶（吉香宝）,1,包,1,||90001,佰迪乐盒装纸巾,1,盒,1,||30653,60g粤秀麻辣牛肉干,1,包,0,A||30851,广之乐红瓜子100g,1,包,0,A||88888,大果盘(套),1,盘,0,B||30866,佰迪乐(艾尔发)玉米花奶甜味袋装120g,1,包,0,B||;"*/;
     InstructionParse *Parse = [[InstructionParse alloc] initWithInstructionString:[[Public getComponentsSeparated:str] objectAtIndex:1]];
-    NSLog(@"%@", str);
+    NSLog(@"%@:%@", foodId, str);
     
     if (Parse && [Parse.contents count] > 0 && [[[Parse.contents objectAtIndex:0] objectAtIndex:0] intValue] > 0)
     {
@@ -270,12 +286,12 @@
         {
             if (![key isEqualToString:@"guding"])
             {
-                int total = 0;
                 NSArray *arr = [taocanDict objectForKey:key];
+                int total = ((TaoCanMingxi *)[arr firstObject]).foodCount;
                 
                 for (TaoCanMingxi *obj in arr)
                 {
-                    total += obj.foodCount;
+                    obj.foodCount = 0;
                 }
                 
                 [taocanCountDict setObject:[NSNumber numberWithInt:total] forKey:key];
@@ -288,7 +304,7 @@
         }
     }
     
-    NSLog(@"taocanDict:%@", taocanDict);
+    NSLog(@"taocanDict:%@", taocanCountDict);
     
 //    [Parse release];
 //    [str release];
@@ -300,10 +316,13 @@
  * Called if an error occurs while trying to receive a requested datagram.
  * This is generally due to a timeout, but could potentially be something else if some kind of OS error occurred.
  **/
-//- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error
-//{
-//    
-//}
+- (void)onUdpSocket:(AsyncUdpSocket *)sock didNotReceiveDataWithTag:(long)tag dueToError:(NSError *)error
+{
+    if (didFinishQuery)
+    {
+        didFinishQuery(foodlist);
+    }
+}
 
 /**
  * Called when the socket is closed.

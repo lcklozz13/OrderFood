@@ -16,4 +16,5 @@
     #import "InstructionCreate.h"
     #import "InstructionParse.h"
     #import "AsyUdpSocket/AsyncUdpSocket.h"
+    #define IS_DEMO_STYLE       0
 #endif

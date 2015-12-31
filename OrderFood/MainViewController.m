@@ -24,10 +24,12 @@ typedef NS_ENUM(int, RoomCategory) {
 @interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, UIActionSheetDelegate, UISearchBarDelegate>
 {
     CGRect          tableViewFrame;
+    
     AsyncUdpSocket *getRoomsSocket;//获取包厢列表请求
     AsyncUdpSocket *changeRoomsSocket;
     AsyncUdpSocket *bookAndFoodSocket;//开房定食请求
     AsyncUdpSocket *checkBooksSocket;
+    
     NSMutableArray  *boxViewArray;//存放包厢视图
     NSMutableArray  *searchArray;//存放搜索结果
     int             showLineCount;//每行显示包厢个数
@@ -40,6 +42,7 @@ typedef NS_ENUM(int, RoomCategory) {
     IBOutlet UILabel   *shijizhong;
     IBOutlet UILabel   *weixiuzhong;
     IBOutlet UILabel   *yijie;
+    IBOutlet UILabel   *zhengli;
     
     IBOutlet UILabel   *kongxianLab;//显示空闲个数
     IBOutlet UILabel   *shiyongLab;//显示使用个数
@@ -47,6 +50,7 @@ typedef NS_ENUM(int, RoomCategory) {
     IBOutlet UILabel   *shijizhongLab;//显示使用中个数
     IBOutlet UILabel   *weixiuzhongLab;//显示维修中个数
     IBOutlet UILabel   *yijieLab;//显示以结个数
+    IBOutlet UILabel   *zhengliLab;//显示整理个数
     
     int                 kongxianCount;//空闲个数
     int                 shiyongCount;//使用个数
@@ -54,10 +58,15 @@ typedef NS_ENUM(int, RoomCategory) {
     int                 shijizhongCount;//使用中个数
     int                 weixiuzhongCount;//维修中个数
     int                 yijieCount;//以结个数
+    int                 zhengliCount;//整理个数
+    
     NSMutableDictionary *dic;//存放搜索结果
+    
     RoomCategory        tableviewCategory;//当前显示模式
+    
     BOOL                isEdit;//是否在查询
     BOOL                needRefresh;//是否需要刷新
+    
     ShowActionViewController *popview;
 }
 
@@ -95,6 +104,18 @@ typedef NS_ENUM(int, RoomCategory) {
 - (void)viewDidLoad
 {
     [super viewDidLoad];
+    
+    if ([[[Public getCurrentDeviceModel] lowercaseString] rangeOfString:@"mini"].location != NSNotFound)
+    {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            CGRect frame = tableView.frame;
+            frame.origin.x += 150;
+            frame.origin.y += 130;
+            tableView.frame = frame;
+        });
+    }
+    
     //初始化界面
     // Do any additional setup after loading the view from its nib.
     if ([self respondsToSelector:@selector(setEdgesForExtendedLayout:)])
@@ -113,8 +134,11 @@ typedef NS_ENUM(int, RoomCategory) {
     tableView.clipsToBounds = YES;
     [tableView setBackgroundColor:[UIColor colorWithRed:246.0f/255.0f green:246.0f/255.0f blue:246.0f/255.0f alpha:1]];
     [headView setBackgroundColor:[UIColor colorWithRed:246.0f/255.0f green:246.0f/255.0f blue:246.0f/255.0f alpha:1]];
-    
+#if IS_DEMO_STYLE
+    self.title = @"包厢列表（预览版）";
+#else
     self.title = @"包厢列表";
+#endif
     [self.view setBackgroundColor:[UIColor clearColor]];
     //返回按钮
     UIButton *btnL = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -157,6 +181,7 @@ typedef NS_ENUM(int, RoomCategory) {
     [shijizhong setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"mark_test.png"]]];
     [weixiuzhong setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"mark_fix.png"]]];
     [yijie setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"mark_over.png"]]];
+    [zhengli setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"mark_cleanup.png"]]];
     
     boxViewArray = [[NSMutableArray alloc] init];
     freeRoomList = [[NSMutableArray alloc] init];
@@ -180,6 +205,15 @@ typedef NS_ENUM(int, RoomCategory) {
     [[NSNotificationCenter defaultCenter] addObserver:self
 											 selector:@selector(keyboardWasHidden:)
 												 name:UIKeyboardWillHideNotification object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationDidEnterBackground:)
+                                                 name:UIApplicationDidEnterBackgroundNotification
+                                               object:nil];
+    [[NSNotificationCenter defaultCenter] addObserver:self
+                                             selector:@selector(applicationWillEnterForeground:)
+                                                 name:UIApplicationWillEnterForegroundNotification
+                                               object:nil];
+    
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -208,6 +242,35 @@ typedef NS_ENUM(int, RoomCategory) {
     }
 }
 
+- (void)applicationDidEnterBackground:(NSNotification*)aNotification
+{
+    if ([refreshTimer isValid])
+    {
+        [refreshTimer invalidate];
+    }
+}
+
+- (void)applicationWillEnterForeground:(NSNotification*)aNotification
+{
+    if (getRoomsSocket)
+    {
+        getRoomsSocket = nil;
+        getRoomsSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
+    //设定定时器、每15秒刷新列表
+    self.refreshTimer = [NSTimer scheduledTimerWithTimeInterval:15.0f target:self selector:@selector(getRoomListInBackground) userInfo:nil repeats:YES];
+    
+    if (needRefresh)
+    {
+        [self getRoomList];
+    }
+    else
+    {
+        [refreshTimer fire];
+    }
+}
+
 - (void)tap
 {
     //点击列表操作
@@ -222,6 +285,7 @@ typedef NS_ENUM(int, RoomCategory) {
 {
     NSString *str = [InstructionCreate getInStruction:INS_GET_ROOM_LIST withContents:nil];
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
+    
     [getRoomsSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_GET_ROOM_LIST intValue]];
     [getRoomsSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_GET_ROOM_LIST intValue]];
 }
@@ -234,6 +298,7 @@ typedef NS_ENUM(int, RoomCategory) {
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"正在获取包厢列表";
     [[Public getInstance].juhua show:YES];
+    
     [getRoomsSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_GET_ROOM_LIST intValue]];
     [getRoomsSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_GET_ROOM_LIST intValue]];
 }
@@ -244,6 +309,13 @@ typedef NS_ENUM(int, RoomCategory) {
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"开房定食";
     [[Public getInstance].juhua show:YES];
+    
+    if (bookAndFoodSocket)
+    {
+        bookAndFoodSocket = nil;
+        bookAndFoodSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [bookAndFoodSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_ROOM_BOOK intValue]];
     [bookAndFoodSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_ROOM_BOOK intValue]];
 }
@@ -255,6 +327,13 @@ typedef NS_ENUM(int, RoomCategory) {
     NSData * data = [str dataUsingEncoding:[Public getInstance].gbkEncoding];
     [Public getInstance].juhua.labelText = @"查单";
     [[Public getInstance].juhua show:YES];
+    
+    if (checkBooksSocket)
+    {
+        checkBooksSocket = nil;
+        checkBooksSocket = [[AsyncUdpSocket alloc] initWithDelegate:self];
+    }
+    
     [checkBooksSocket receiveWithTimeout:MAX_TIMEOUT tag:[INS_CHECK_ORDER intValue]];
     [checkBooksSocket sendData:data toHost:[Public getInstance].serviceIpAddr port:SERVICE_PORT withTimeout:MAX_TIMEOUT tag:[INS_CHECK_ORDER intValue]];
 }
@@ -364,7 +443,7 @@ typedef NS_ENUM(int, RoomCategory) {
 //点击包厢视图回调函数
 - (void)clickCellRoom:(BoxInforView *)view
 {
-    if ([view.leaveTime intValue] < 30*60)
+    if ([view.leaveTime intValue] < 30 && view.stat == 1)
     {
         self.curRoomId = view;
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"提示" message:@"当前包厢使用时间快要结束，是否继续点餐" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
@@ -479,6 +558,7 @@ typedef NS_ENUM(int, RoomCategory) {
             shijizhongCount = 0;
             weixiuzhongCount = 0;
             yijieCount = 0;
+            zhengliCount = 0;
             
             for (NSString *key in [dic allKeys])
             {
@@ -548,8 +628,12 @@ typedef NS_ENUM(int, RoomCategory) {
                 {
                     yijieCount++;
                 }
+                else if ([view.code isEqualToString:@"E"])//整理
+                {
+                    zhengliCount++;
+                }
                 
-                [view addTarget:self action:@selector(clickCellRoom:) forControlEvents:UIControlEventTouchDown];
+                [view addTarget:self action:@selector(clickCellRoom:) forControlEvents:UIControlEventTouchUpInside];
                 //                [view release];
             }
             
@@ -559,19 +643,27 @@ typedef NS_ENUM(int, RoomCategory) {
             NSArray *allkey = [dic allKeys];
             int segmentIndex = 1;
             
-            for (NSString *category in allkey)
+            if ([allkey count] > 1)
             {
-                [roomCategory insertSegmentWithTitle:category atIndex:segmentIndex++ animated:NO];
+                for (NSString *category in allkey)
+                {
+                    [roomCategory insertSegmentWithTitle:category atIndex:segmentIndex++ animated:NO];
+                }
+            }
+            else
+            {
+                [roomCategory setHidden:YES];
             }
             
             [roomCategory setSelectedSegmentIndex:0];
             
-            [kongxianLab setText:[NSString stringWithFormat:@"%d", kongxianCount]];
-            [shiyongLab setText:[NSString stringWithFormat:@"%d", shiyongCount]];
-            [yudingLab setText:[NSString stringWithFormat:@"%d", yudingCount]];
-            [shijizhongLab setText:[NSString stringWithFormat:@"%d", shijizhongCount]];
-            [weixiuzhongLab setText:[NSString stringWithFormat:@"%d", weixiuzhongCount]];
-            [yijieLab setText:[NSString stringWithFormat:@"%d", yijieCount]];
+            [kongxianLab setText:[[NSString alloc] initWithFormat:@"%d", kongxianCount]];
+            [shiyongLab setText:[[NSString alloc] initWithFormat:@"%d", shiyongCount]];
+            [yudingLab setText:[[NSString alloc] initWithFormat:@"%d", yudingCount]];
+            [shijizhongLab setText:[[NSString alloc] initWithFormat:@"%d", shijizhongCount]];
+            [weixiuzhongLab setText:[[NSString alloc] initWithFormat:@"%d", weixiuzhongCount]];
+            [yijieLab setText:[[NSString alloc] initWithFormat:@"%d", yijieCount]];
+            [zhengliLab setText:[[NSString alloc] initWithFormat:@"%d", zhengliCount]];
             
             [tableView reloadData];
         }
@@ -667,7 +759,7 @@ typedef NS_ENUM(int, RoomCategory) {
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSString *identifies = [NSString stringWithFormat:@"cell%d", indexPath.row];
+    NSString *identifies = [[NSString alloc] initWithFormat:@"cell%d", indexPath.row];
     
     UITableViewCell *cell = [self.tableView dequeueReusableCellWithIdentifier:identifies];
     
@@ -903,14 +995,14 @@ typedef NS_ENUM(int, RoomCategory) {
     for (BoxInforView *view in boxViewArray)
     {
         [view removeFromSuperview];
-        NSString *str = [NSString stringWithFormat:@"%@%@", view.roomId, view.title];
+        NSString *str = [[NSString alloc] initWithFormat:@"%@%@", view.roomId, view.title];
         
         BOOL isMember = NO;
         
         for (int j=0; j<[searchText length]; j++)
         {
             unichar char1 = [searchText characterAtIndex:j];
-            if ([str rangeOfString:[NSString stringWithFormat:@"%c", char1]].location != NSNotFound)
+            if ([str rangeOfString:[[NSString alloc] initWithFormat:@"%c", char1]].location != NSNotFound)
             {
                 isMember = YES;
             }

@@ -35,4 +35,5 @@
 - (NSString *)getDefaultIPAddress;//获得默认ip
 - (NSString *)getDefaultUserName;//获得默认UserName
 + (NSArray *)getComponentsSeparated:(NSString *)string;
++ (NSString *)getCurrentDeviceModel;
 @end

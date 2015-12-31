@@ -50,18 +50,18 @@
     [rootController.navigationBar setBarStyle:UIBarStyleBlack];
 //    [view release];
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 40000
-	multitaskingSupported = [[UIDevice currentDevice] respondsToSelector:@selector(isMultitaskingSupported)] && [[UIDevice currentDevice] isMultitaskingSupported];
-	backgroundTask = UIBackgroundTaskInvalid;
-	expirationHandler = ^{
-		AppDelegate *app = (AppDelegate*)[UIApplication sharedApplication];
-		if(app->multitaskingSupported)
-        {
-			[(UIApplication*)app endBackgroundTask:app->backgroundTask];
-			app->backgroundTask = UIBackgroundTaskInvalid;
-			
-			app->backgroundTask = [(UIApplication*)app beginBackgroundTaskWithExpirationHandler:app->expirationHandler];
-		}
-    };
+//	multitaskingSupported = [[UIDevice currentDevice] respondsToSelector:@selector(isMultitaskingSupported)] && [[UIDevice currentDevice] isMultitaskingSupported];
+//	backgroundTask = UIBackgroundTaskInvalid;
+//	expirationHandler = ^{
+//		AppDelegate *app = (AppDelegate*)[UIApplication sharedApplication];
+//		if(app->multitaskingSupported)
+//        {
+//			[(UIApplication*)app endBackgroundTask:app->backgroundTask];
+//			app->backgroundTask = UIBackgroundTaskInvalid;
+//			
+//			app->backgroundTask = [(UIApplication*)app beginBackgroundTaskWithExpirationHandler:app->expirationHandler];
+//		}
+//    };
 #endif /* __IPHONE_OS_VERSION_MIN_REQUIRED */
     
     return YES;
@@ -77,23 +77,23 @@
 {
     // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later. 
     // If your application supports background execution, this method is called instead of applicationWillTerminate: when the user quits.
-    application.idleTimerDisabled = YES;
+    application.idleTimerDisabled = YES;//自动锁屏
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 40000
-    BOOL backgroundAccepted = [[UIApplication sharedApplication] setKeepAliveTimeout:600 handler:^{
-        
-    }];
-    
-    if (backgroundAccepted)
-        
-    {
-        NSLog(@"backgrounding accepted");
-    }
-    
-	if(self->multitaskingSupported)
-    {
-		NSLog(@"applicationDidEnterBackground (Registered or Regitering)");
-		self->backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:self->expirationHandler];
-	}
+//    BOOL backgroundAccepted = [[UIApplication sharedApplication] setKeepAliveTimeout:600 handler:^{
+//        
+//    }];
+//    
+//    if (backgroundAccepted)
+//        
+//    {
+//        NSLog(@"backgrounding accepted");
+//    }
+//    
+//	if(self->multitaskingSupported)
+//    {
+//		NSLog(@"applicationDidEnterBackground (Registered or Regitering)");
+//		self->backgroundTask = [[UIApplication sharedApplication] beginBackgroundTaskWithExpirationHandler:self->expirationHandler];
+//	}
 #endif /* __IPHONE_OS_VERSION_MIN_REQUIRED */
 }
 
@@ -101,18 +101,18 @@
 {
     // Called as part of the transition from the background to the inactive state; here you can undo many of the changes made on entering the background.
     
-    application.idleTimerDisabled = NO;
+    application.idleTimerDisabled = NO;//不锁屏
     [UIApplication sharedApplication].applicationIconBadgeNumber = 0;
     NSLog(@"程序将切换到前台运行！");
 #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 40000
-    [[UIApplication sharedApplication] clearKeepAliveTimeout];
-	AppDelegate *app = (AppDelegate*)[UIApplication sharedApplication];
-	// terminate background task
-	if(self->backgroundTask != UIBackgroundTaskInvalid)
-    {
-		[(UIApplication*)app endBackgroundTask:self->backgroundTask];
-		self->backgroundTask = UIBackgroundTaskInvalid;
-	}
+//    [[UIApplication sharedApplication] clearKeepAliveTimeout];
+//	AppDelegate *app = (AppDelegate*)[UIApplication sharedApplication];
+//	// terminate background task
+//	if(self->backgroundTask != UIBackgroundTaskInvalid)
+//    {
+//		[(UIApplication*)app endBackgroundTask:self->backgroundTask];
+//		self->backgroundTask = UIBackgroundTaskInvalid;
+//	}
 #endif
 }
 

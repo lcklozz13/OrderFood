@@ -45,6 +45,7 @@
         didBook(self);
     }
 }
+
 //返回操作
 - (IBAction)backAction:(id)sender
 {
@@ -138,7 +139,7 @@
         total += [food.price floatValue] * food.bookCount;
     }
     
-    [showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+    [showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
     [backBtn setImage:[UIImage imageNamed:@"icon_back.png"] forState:UIControlStateNormal];
     
     r = showTotalLab.frame;
@@ -159,6 +160,7 @@
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
+
 #pragma mark UITableViewDataSource
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
 {
@@ -167,7 +169,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSString     *cellForCategory = [NSString stringWithFormat:@"cellForSelected%d", indexPath.row];
+    NSString     *cellForCategory = [[NSString alloc] initWithFormat:@"cellForSelected%d", indexPath.row];
     
     FoodListCell *cell = [tableView dequeueReusableCellWithIdentifier:cellForCategory];
     
@@ -204,7 +206,7 @@
             total += [food.price floatValue] * food.bookCount;
         }
         
-        [obj.showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", total]];
+        [obj.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
     };
     
     FoodObject *sub = [dataSource objectAtIndex:indexPath.row];
@@ -238,14 +240,48 @@
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
 }
 
+- (void) tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath
+{
+     if (editingStyle == UITableViewCellEditingStyleDelete)
+     {
+         UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:nil message:@"是否删除该菜品" delegate:self cancelButtonTitle:@"取消" otherButtonTitles:@"确定", nil];
+         [alertView show];
+         self.curFoodObject = [dataSource objectAtIndex:indexPath.row];;
+     }
+}
+
+- (UITableViewCellEditingStyle)tableView:(UITableView *)tableView editingStyleForRowAtIndexPath:(NSIndexPath *)indexPath;
+{
+    return UITableViewCellEditingStyleDelete;
+}
+
 #pragma mark UIAlertViewDelegate
 - (void)alertView:(UIAlertView *)alertView clickedButtonAtIndex:(NSInteger)buttonIndex
 {
     if (buttonIndex == 1)//点击是删除该草品
     {
         [dataSource removeObject:curFoodObject];
+        self.curFoodObject.bookCount = 0;
+        
+        if (curFoodObject.referenceObject)
+        {
+            curFoodObject.referenceObject.bookCount = 0;
+        }
+        
         self.curFoodObject = nil;
-        [mainView reloadData];
+        float total = 0.0f;
+        
+        for (FoodObject *food in self.dataSource)
+        {
+            total += [food.price floatValue] * food.bookCount;
+        }
+        
+        dispatch_async(dispatch_get_main_queue(), ^{
+            
+            [self.showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", total]];
+        });
     }
+    
+    [mainView reloadData];
 }
 @end

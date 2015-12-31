@@ -105,12 +105,12 @@
     {
         //设置已结未结金额，并刷新界面
         weijie -= [curFood.totalCount floatValue];
-        NSString *showStr = [NSString stringWithFormat:@"未结:￥%.0f|已结:￥%.0f", weijie, yijie];
+        NSString *showStr = [[NSString alloc] initWithFormat:@"未结:￥%.0f|已结:￥%.0f", weijie, yijie];
         [danwei1 setText:showStr];
         CGSize labSzie = [showStr sizeWithFont:danwei1.font];
         danwei1.frame = CGRectMake(0, (32.0f-labSzie.height)/2, labSzie.width, labSzie.height);
         CGRect r = showTotalLab.frame;
-        [showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", weijie + yijie]];
+        [showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", weijie + yijie]];
         r.size = [showTotalLab.text sizeWithFont:showTotalLab.font];
         r.size.width += danwei2.frame.size.width;
         r.size.width += danwei1.frame.size.width;
@@ -213,7 +213,7 @@
     [lab setFont:[UIFont boldSystemFontOfSize:18.0f]];
     self.danwei1 = lab;
     
-    NSString *showStr = [NSString stringWithFormat:@"未结:￥%.0f|已结:￥%.0f", weijie, yijie];
+    NSString *showStr = [[NSString alloc] initWithFormat:@"未结:￥%.0f|已结:￥%.0f", weijie, yijie];
     UIView *view = [[UIView alloc] initWithFrame:CGRectMake(0, 0, [showStr sizeWithFont:lab.font].width, 32.0f)];
     CGSize labSzie = [showStr sizeWithFont:lab.font];
     lab.frame = CGRectMake(0, (32.0f-labSzie.height)/2, labSzie.width, labSzie.height);
@@ -225,7 +225,7 @@
     
     CGRect r = showTotalLab.frame;
         
-    [showTotalLab setText:[NSString stringWithFormat:@"￥%.0f", weijie + yijie]];
+    [showTotalLab setText:[[NSString alloc] initWithFormat:@"￥%.0f", weijie + yijie]];
     [backBtn setImage:[UIImage imageNamed:@"icon_back.png"] forState:UIControlStateNormal];
     
     r.size = [showTotalLab.text sizeWithFont:showTotalLab.font];
@@ -273,7 +273,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    NSString     *cellForCategory = [NSString stringWithFormat:@"OrderedFoodCell%d", indexPath.row];
+    NSString     *cellForCategory = [[NSString alloc] initWithFormat:@"OrderedFoodCell%d", indexPath.row];
     
     OrderedFoodCell *cell = [tableView dequeueReusableCellWithIdentifier:cellForCategory];
     

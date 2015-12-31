@@ -141,24 +141,28 @@ static PopTableAlertView *_PopTableAlertView = nil;
 {
     int total = 0;
     int increatment = sender.value;
+    BOOL isDecreatment = NO;
+    
+    if (increatment < sender.mingxi.foodCount)
+    {
+        isDecreatment = YES;
+    }
     
     for (TaoCanMingxi *obj in sender.taocanArray)
     {
         if ([obj.foodID isEqualToString:sender.mingxi.foodID])
         {
             total += increatment;
+            
+            
         }
         else
         {
             total += obj.foodCount;
         }
     }
-        
-    if (total > /*[sender.taocanArray count]*/[[curFoodObject.taocanCountDict objectForKey:sender.mingxi.fenzu] intValue])
-    {
-        sender.value = sender.mingxi.foodCount;
-    }
-    else
+    
+    if ((total <= [[curFoodObject.taocanCountDict objectForKey:sender.mingxi.fenzu] intValue] * curFoodObject.bookCount) || isDecreatment)
     {
         sender.mingxi.foodCount = sender.value;
     }
@@ -211,10 +215,19 @@ static PopTableAlertView *_PopTableAlertView = nil;
     {
         NSArray *array = [delegate PopTableAlertViewGetDataSourceInSection:indexPath.section];
         TaoCanMingxi *mingxi = [array objectAtIndex:indexPath.row];
-        [cell.textLabel setText:[NSString stringWithFormat:@"%@\t%d%@", mingxi.foodName, mingxi.foodCount, mingxi.danwei]];
+        
+        if (mingxi.isguding)
+        {
+            [cell.textLabel setText:[[NSString alloc] initWithFormat:@"%@\t%d%@", mingxi.foodName, mingxi.foodCount*curFoodObject.bookCount, mingxi.danwei]];
+        }
+        else
+        {
+            [cell.textLabel setText:[[NSString alloc] initWithFormat:@"%@\t%d%@", mingxi.foodName, mingxi.foodCount, mingxi.danwei]];
+        }
         
         MyStep *step = (MyStep *)[cell viewWithTag:10086];
-        if (!step) {
+        if (!step)
+        {
             step = [[MyStep alloc] init];
             step.frame = CGRectMake(260-9-94, 60-29, 94, 29);
             [cell addSubview:step];
@@ -222,8 +235,7 @@ static PopTableAlertView *_PopTableAlertView = nil;
             step.tag = 10086;
         }
         
-        [step setMaximumValue:[delegate selectionCountInsection:indexPath.section]];
-        [step setMinimumValue:0];
+        [step setValue:mingxi.foodCount];
         
         if (mingxi.isguding)
         {
@@ -236,11 +248,6 @@ static PopTableAlertView *_PopTableAlertView = nil;
             step.mingxi = mingxi;
             step.taocanArray = array;
         }
-//        if (!mingxi.isguding && mingxi.isSelected) {
-//            [cell.imageView setImage:[UIImage imageNamed:@"icon_checked.png"]];
-//        } else {
-//            [cell.imageView setImage:nil];
-//        }
     }
     
     return cell;

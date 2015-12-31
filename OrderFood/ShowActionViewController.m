@@ -135,7 +135,6 @@
             }
             
             [bookBtn setHidden:YES];
-            [memberBtn setHidden:YES];
             [notifilab setHidden:YES];
         }
             break;

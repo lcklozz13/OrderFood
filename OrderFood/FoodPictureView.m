@@ -71,10 +71,10 @@
     }
     
     [imageView setImage:food.foodPrewview];
-    [showCount setText:[NSString stringWithFormat:@"%d", food.bookCount]];
+    [showCount setText:[[NSString alloc] initWithFormat:@"%d", food.bookCount]];
     [textLabel setText:food.foodName];
     
-    [danweiLab1 setText:[NSString stringWithFormat:@"/%@", food.danwei]];
+    [danweiLab1 setText:[[NSString alloc] initWithFormat:@"/%@", food.danwei]];
     CGRect r = danweiLab1.frame;
     r.size.width = [danweiLab1.text sizeWithFont:danweiLab1.font].width;
     danweiLab1.frame = r;
@@ -97,7 +97,7 @@
 {
     if ([keyPath isEqualToString:@"bookCount"])
     {
-        [showCount setText:[NSString stringWithFormat:@"%d", food.bookCount]];
+        [showCount setText:[[NSString alloc] initWithFormat:@"%d", food.bookCount]];
         CGRect r = showCount.frame;
         r.size.width = [showCount.text sizeWithFont:showCount.font].width + showCount.leftView.frame.size.width;
         showCount.frame = r;
@@ -264,29 +264,99 @@
     
     [[[UIApplication sharedApplication] keyWindow] addSubview:detailview.view];
 }
+
 //删除操作
 - (void)deleteAction
 {
-    if (food.bookCount > 0)
+    if ([[food.isTaocan lowercaseString] isEqualToString:@"false"])
     {
-        food.bookCount = food.bookCount - 1;
-        
-        if (food.bookCount == 0)
-        {
-            if (didDelete)
-            {
-                didDelete(food);
-            }
-        }
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"您当前选择的是可选套餐,请注意修改明细" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+        alertView.tag = 10010;
+        [alertView show];
     }
-    
-    if (refreshBlock)
+    else
     {
-        refreshBlock();
+        [self Decrease];
     }
 }
 //添加操作
 - (void)addAction
+{
+    if ([[food.isTaocan lowercaseString] isEqualToString:@"false"])
+    {
+        UIAlertView *alertView = [[UIAlertView alloc] initWithTitle:@"提示" message:@"您当前选择的是可选套餐,请注意修改明细" delegate:self cancelButtonTitle:@"确定" otherButtonTitles:nil];
+        alertView.tag = 10086;
+        [alertView show];
+    }
+    else
+    {
+        [self Increase];
+    }
+}
+
+/*
+// Only override drawRect: if you perform custom drawing.
+// An empty implementation adversely affects performance during animation.
+- (void)drawRect:(CGRect)rect
+{
+    // Drawing code
+}
+*/
+
+- (void)showFoodList
+{
+    if ([food.foodlist count] == 0)
+    {
+        [Public getInstance].juhua.labelText = @"正在查询套餐明细";
+        [[Public getInstance].juhua show:YES];
+        [food getMingXi];
+        __block typeof(self) obj = self;
+        food.didFinishQuery = ^(NSMutableArray *ret) {
+            
+            [[Public getInstance].juhua show:NO];
+            
+            if ([ret count] == 0)
+            {
+                obj->food.bookCount = 0;
+                if (obj->refreshBlock)
+                {
+                    obj->refreshBlock();
+                }
+                
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    
+                    //提示:查询套餐明细失败
+                    MBProgressHUD *hud = [MBProgressHUD showHUDAddedTo:[UIApplication sharedApplication].keyWindow animated:YES];
+                    
+                    hud.mode = MBProgressHUDModeText;
+                    hud.labelText = @"查询套餐明细失败，请重试。";
+                    hud.margin = 10.f;
+                    hud.removeFromSuperViewOnHide = YES;
+                    
+                    [hud hide:NO afterDelay:2];
+                    
+                });
+                return;
+            }
+            else
+            {
+                [PopTableAlertView getInstance].delegate = obj;
+                [PopTableAlertView getInstance].curModel = ShowFoodList;
+                [PopTableAlertView getInstance].curFoodObject = obj->food;
+                [[PopTableAlertView getInstance] show];
+            }
+        };
+    }
+    else
+    {
+        [PopTableAlertView getInstance].delegate = self;
+        [PopTableAlertView getInstance].curModel = ShowFoodList;
+        [PopTableAlertView getInstance].curFoodObject = food;
+        [[PopTableAlertView getInstance] show];
+    }
+}
+
+- (void)Increase
 {
     food.bookCount = food.bookCount + 1;
     
@@ -304,14 +374,36 @@
     }
 }
 
-/*
-// Only override drawRect: if you perform custom drawing.
-// An empty implementation adversely affects performance during animation.
-- (void)drawRect:(CGRect)rect
+- (void)Decrease
 {
-    // Drawing code
+    if (food.bookCount > 0)
+    {
+        food.bookCount = food.bookCount - 1;
+        
+        if (food.bookCount == 0)
+        {
+            if (showAlertView)
+            {
+                if (didDeleteZeroAlert)
+                {
+                    didDeleteZeroAlert(food);
+                }
+            }
+            else
+            {
+                if (didDelete)
+                {
+                    didDelete(food);
+                }
+            }
+        }
+    }
+    
+    if (refreshBlock)
+    {
+        refreshBlock();
+    }
 }
-*/
 
 #pragma make UITextFieldDelegate
 - (void)textFieldDidBeginEditing:(UITextField *)textField
@@ -399,30 +491,159 @@
 
 - (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event
 {
-    __block typeof(self) ob = self;
-    [showCount resignFirstResponder];
-    if ([food.foodlist count] == 0)
+    if (![[food.isTaocan lowercaseString] isEqualToString:@"false"])
     {
-        [food getMingXi];
-        food.didFinishQuery = ^(NSMutableArray *ret) {
-            [PopTableAlertView getInstance].delegate = ob;
+        if ([food.foodlist count] == 0)
+        {
+            [food getMingXi];
+            __block typeof(self) obj = self;
+            food.didFinishQuery = ^(NSMutableArray *ret)
+            {
+                if ([ret count] > 0)
+                {
+                    [PopTableAlertView getInstance].delegate = obj;
+                    [PopTableAlertView getInstance].curModel = ShowFoodList;
+                    [PopTableAlertView getInstance].curFoodObject = obj->food;
+                    [[PopTableAlertView getInstance] show];
+                }
+            };
+        }
+        else
+        {
+            [PopTableAlertView getInstance].delegate = self;
             [PopTableAlertView getInstance].curModel = ShowFoodList;
-            [PopTableAlertView getInstance].curFoodObject = ob->food;
+            [PopTableAlertView getInstance].curFoodObject = food;
             [[PopTableAlertView getInstance] show];
-        };
+        }
     }
     else
     {
-        [PopTableAlertView getInstance].delegate = self;
-        [PopTableAlertView getInstance].curModel = ShowFoodList;
-        [PopTableAlertView getInstance].curFoodObject = food;
-        [[PopTableAlertView getInstance] show];
+        [self showFoodList];
     }
+//    __block typeof(self) ob = self;
+//    [showCount resignFirstResponder];
+//    if ([food.foodlist count] == 0)
+//    {
+//        [food getMingXi];
+//        food.didFinishQuery = ^(NSMutableArray *ret) {
+//            [PopTableAlertView getInstance].delegate = ob;
+//            [PopTableAlertView getInstance].curModel = ShowFoodList;
+//            [PopTableAlertView getInstance].curFoodObject = ob->food;
+//            [[PopTableAlertView getInstance] show];
+//        };
+//    }
+//    else
+//    {
+//        [PopTableAlertView getInstance].delegate = self;
+//        [PopTableAlertView getInstance].curModel = ShowFoodList;
+//        [PopTableAlertView getInstance].curFoodObject = food;
+//        [[PopTableAlertView getInstance] show];
+//    }
 }
 
 - (NSArray *)PopTableAlertViewGetDataSource
 {
     return food.foodlist;
+}
+
+- (int)numberOfSectionInTable
+{
+    return [[food.taocanDict allKeys] count];
+}
+
+- (NSString *)titleForSection:(int)section
+{
+    NSArray *cate = [[food.taocanDict allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        
+        NSString *ob1 = (NSString *)obj1;
+        NSString *ob2 = (NSString *)obj2;
+        
+        if ([ob1 isEqualToString:ob2])
+        {
+            return NSOrderedSame;
+        }
+        else if ([ob1 isEqualToString:@"guding"])
+        {
+            return NSOrderedAscending;
+        }
+        else if ([ob2 isEqualToString:@"guding"])
+        {
+            return NSOrderedDescending;
+        }
+        else
+        {
+            return [[ob1 lowercaseString] compare:[ob2 lowercaseString]];
+        }
+    }];
+    
+    NSString *ret = [cate objectAtIndex:section];
+    if ([ret isEqualToString:@"guding"])
+    {
+        ret = @"固定选项";
+    }
+    else
+    {
+        ret = [[NSString alloc] initWithFormat:@"%@   可任选%d X %d个", ret, [[food.taocanCountDict objectForKey:ret] intValue], food.bookCount];
+    }
+    
+    return ret;
+}
+
+- (NSArray *)PopTableAlertViewGetDataSourceInSection:(int)section
+{
+    NSArray *cate = [[food.taocanDict allKeys] sortedArrayUsingComparator:^NSComparisonResult(id obj1, id obj2) {
+        
+        NSString *ob1 = (NSString *)obj1;
+        NSString *ob2 = (NSString *)obj2;
+        
+        if ([ob1 isEqualToString:ob2])
+        {
+            return NSOrderedSame;
+        }
+        else if ([ob1 isEqualToString:@"guding"])
+        {
+            return NSOrderedAscending;
+        }
+        else if ([ob2 isEqualToString:@"guding"])
+        {
+            return NSOrderedDescending;
+        }
+        else
+        {
+            return [[ob1 lowercaseString] compare:[ob2 lowercaseString]];
+        }
+    }];
+    
+    return [food.taocanDict objectForKey:[cate objectAtIndex:section]];
+}
+
+- (int)selectionCountInsection:(int)section
+{
+    //return food.foodlist;
+    NSArray *array = [food.taocanDict allKeys];
+    NSString *key = [array objectAtIndex:section];
+    NSNumber *num = [food.taocanCountDict objectForKey:key];
+    return [num intValue] * food.bookCount;
+}
+
+- (void)PopTableAlertViewDidSelectIndex:(NSIndexPath *)indexPath
+{
+    
+}
+
+#pragma mark UIAlertViewDelegate
+- (void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex
+{
+    if (alertView.tag == 10010)//减操作
+    {
+        [self Decrease];
+    }
+    else if (alertView.tag == 10086)//加操作
+    {
+        [self Increase];
+    }
+    
+    [self showFoodList];
 }
 
 @end

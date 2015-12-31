@@ -36,6 +36,10 @@ typedef void(^QueryFoodListFinisg)(NSMutableArray *);
 @property (nonatomic, retain) NSMutableDictionary *taocanCountDict;
 @property (nonatomic, assign) BOOL              ischeck;
 @property (nonatomic, retain) NSString          *isTaocan;
+@property (nonatomic, assign) int               searchIndex;
+
+@property (nonatomic, retain) FoodObject        *referenceObject;
+
 - (id)initWitPase:(NSMutableArray *)ps;
 - (void)getMingXi;
 - (void)stopGetMingXi;

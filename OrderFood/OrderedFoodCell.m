@@ -160,12 +160,12 @@
     
     [self.textLabel setText:curOrderFood.foodName];
     [self.textLabel setMinimumFontSize:12];
-    [showPrice setText:[NSString stringWithFormat:@"￥%@", curOrderFood.price]];
-    [danwei1 setText:[NSString stringWithFormat:@"  /%@", curOrderFood.danwei]];
+    [showPrice setText:[[NSString alloc] initWithFormat:@"￥%@", curOrderFood.price]];
+    [danwei1 setText:[[NSString alloc] initWithFormat:@"  /%@", curOrderFood.danwei]];
     [showPrewview setImage:curOrderFood.foodPrewview];
     
-    [showCount setText:[NSString stringWithFormat:@"已下:%@%@ 共:￥%@", curOrderFood.buyCount, curOrderFood.danwei, curOrderFood.totalCount]];
-    [danwei2 setText:[NSString stringWithFormat:@"下单时间：%@", curOrderFood.orderedDate]];
+    [showCount setText:[[NSString alloc] initWithFormat:@"已下:%@%@ 共:￥%@", curOrderFood.buyCount, curOrderFood.danwei, curOrderFood.totalCount]];
+    [danwei2 setText:[[NSString alloc] initWithFormat:@"下单时间：%@", curOrderFood.orderedDate]];
     
     if ([curOrderFood.unknow3 isEqualToString:@"1"])
     {

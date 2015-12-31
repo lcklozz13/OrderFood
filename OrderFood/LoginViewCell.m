@@ -25,17 +25,17 @@
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     if (self) {
         // Initialization code
-        titleLab = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 140, 22)];
+        titleLab = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, 170, 22)];
         [titleLab setTextAlignment:NSTextAlignmentRight];
         [titleLab setBackgroundColor:[UIColor clearColor]];
         [titleLab setTextColor:[UIColor lightGrayColor]];
-        [titleLab setFont:[UIFont boldSystemFontOfSize:17.0f]];
+        [titleLab setFont:[UIFont boldSystemFontOfSize:21.0f]];
         
         content = [[UITextField alloc] initWithFrame:CGRectMake(0, 0, 200, 22)];
         content.leftViewMode = UITextFieldViewModeAlways;
         content.leftView = titleLab;
         [content setTextColor:[UIColor lightGrayColor]];
-        [content setFont:[UIFont boldSystemFontOfSize:17.0f]];
+        [content setFont:[UIFont boldSystemFontOfSize:21.0f]];
         [self addSubview:content];
     }
     return self;
